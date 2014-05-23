@@ -1279,7 +1279,17 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void jButtonRemoveLogFileActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRemoveLogFileActionPerformed
     {//GEN-HEADEREND:event_jButtonRemoveLogFileActionPerformed
-        // TODO add your handling code here:
+        // Remove it from the respective server
+	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).removeLog((String) jListLogFiles.getSelectedValue());
+	
+	// Remove it from the current list
+	serverLogFilesListModel.removeElement((String) jListLogFiles.getSelectedValue());
+	
+	// Select first object
+	jListLogFiles.setSelectedIndex(0);
+	
+	// Reload properties in case there are no other objects
+	loadServerLogProperties();
     }//GEN-LAST:event_jButtonRemoveLogFileActionPerformed
 
     // <editor-fold defaultstate="collapsed" desc="Generated Variables">
