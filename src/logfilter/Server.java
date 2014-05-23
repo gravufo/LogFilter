@@ -7,8 +7,7 @@
 package logfilter;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
 
 /**
  *
@@ -22,7 +21,7 @@ public class Server implements Serializable
 	this.useSSH = true;
 	this.name = name;
 	this.hostname = hostname;
-	this.logMap = new HashMap<>();
+	this.logList = new ArrayList<>();
     }
 
     public Server(String name, String hostname, Server server)
@@ -31,7 +30,7 @@ public class Server implements Serializable
 	this.useSSH = server.useSSH;
 	this.name = name;
 	this.hostname = hostname;
-	this.logMap = new HashMap<>(server.logMap);
+	this.logList = new ArrayList<>(server.logList);
     }
     
     public String getHostname()
@@ -64,27 +63,22 @@ public class Server implements Serializable
 	return useSSH;
     }
 
-    public Log getLog(String name)
+    public boolean addLog(String log)
     {
-	return logMap.get(name);
-    }
-
-    public boolean addLog(Log log)
-    {
-	return logMap.putIfAbsent(log.getName(), log) == null;
+	return logList.add(log);
     }
     
     public boolean removeLog(String name)
     {
-	return logMap.remove(name) != null;
+	return logList.remove(name);
     }
 
-    public Map<String, Log> getLogMap()
+    public ArrayList<String> getLogList()
     {
-	return logMap;
+	return logList;
     }
     
-    private Map<String, Log> logMap;
+    private ArrayList<String> logList;
     private boolean enabled;
     private boolean useSSH;
     private final String hostname;

@@ -190,16 +190,8 @@ public class MainWindow extends JFrame
 
     private void jMenuItemPreferencesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemPreferencesActionPerformed
     {//GEN-HEADEREND:event_jMenuItemPreferencesActionPerformed
-        // TODO add your handling code here:
-	java.awt.EventQueue.invokeLater(new Runnable()
-        {
-	    @Override
-            public void run()
-            {
-                new PreferencesDialog(MainWindow.this, true).setVisible(true);
-            }
-        });
-	
+        
+        new PreferencesDialog(MainWindow.this, true).setVisible(true);
 //	new Thread()
 //	{
 //	    @Override

@@ -8,9 +8,12 @@ package ui;
 
 import java.awt.Rectangle;
 import java.net.PasswordAuthentication;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JTabbedPane;
 import logfilter.Filter;
 import logfilter.Log;
 import logfilter.Server;
@@ -67,6 +70,18 @@ public class PreferencesDialog extends javax.swing.JDialog
 	jPasswordFieldServerPassword.setText(String.valueOf(Preferences.getInstance().getServerAccount().getPassword()));
     }
 
+    public ArrayList<String> showDialog()
+    {
+	setVisible(true);
+	
+	ArrayList<String> list = new ArrayList<>();
+	Enumeration<String> serverList = serverListModel.elements();
+	while(serverList.hasMoreElements())
+	    list.add(serverList.nextElement());
+	
+	return list;
+    }
+    
     private void loadServerProperties()
     {
 	if(serverListModel.isEmpty())
@@ -96,7 +111,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    // TODO: improvement: sort the list by enabled first (or by user choice, saved index)
 	    serverLogFilesListModel.clear();
 
-	    for(String s : server.getLogMap().keySet())
+	    for(String s : server.getLogList())
 		serverLogFilesListModel.addElement(s);
 
 	    jButtonAddLogFile.setEnabled(true);
@@ -280,6 +295,14 @@ public class PreferencesDialog extends javax.swing.JDialog
             public void windowClosing(java.awt.event.WindowEvent evt)
             {
                 formWindowClosing(evt);
+            }
+        });
+
+        jTabbedPaneRoot.addChangeListener(new javax.swing.event.ChangeListener()
+        {
+            public void stateChanged(javax.swing.event.ChangeEvent evt)
+            {
+                jTabbedPaneRootStateChanged(evt);
             }
         });
 
@@ -1137,9 +1160,22 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void jButtonLogFileTemplateRemoveActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonLogFileTemplateRemoveActionPerformed
     {//GEN-HEADEREND:event_jButtonLogFileTemplateRemoveActionPerformed
-        templateLogFilesListModel.removeElement((String) jListTemplateLogFiles.getSelectedValue());
-	Preferences.getInstance().removeLog((String) jListTemplateLogFiles.getSelectedValue());
+        String name = (String) jListTemplateLogFiles.getSelectedValue();
+	
+	// Remove this entry from all the servers, if they have it
+	for(int i = 0; i < serverListModel.size(); ++i)
+	{
+	    Preferences.getInstance().getServer((String) serverListModel.get(i)).removeLog(name);
+	}
+	
+	// Remove from the preferences and the list
+	templateLogFilesListModel.removeElement(name);
+	Preferences.getInstance().removeLog(name);
+	
+	// Select first element in the list
 	jListTemplateLogFiles.setSelectedIndex(0);
+	
+	// Reload properties in case there are no more elements
 	loadLogTemplateProperties();
     }//GEN-LAST:event_jButtonLogFileTemplateRemoveActionPerformed
 
@@ -1266,7 +1302,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    return;
 	
 	// Add it to the server
-	Preferences.getInstance().getServer((String) jListServers.getSelectedValue());
+	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).addLog(selectedLog);
 	
 	serverLogFilesListModel.addElement(selectedLog);
 	jListLogFiles.setSelectedIndex(serverLogFilesListModel.indexOf(selectedLog));
@@ -1291,6 +1327,27 @@ public class PreferencesDialog extends javax.swing.JDialog
 	// Reload properties in case there are no other objects
 	loadServerLogProperties();
     }//GEN-LAST:event_jButtonRemoveLogFileActionPerformed
+
+    private void jTabbedPaneRootStateChanged(javax.swing.event.ChangeEvent evt)//GEN-FIRST:event_jTabbedPaneRootStateChanged
+    {//GEN-HEADEREND:event_jTabbedPaneRootStateChanged
+        JTabbedPane source = (JTabbedPane) evt.getSource();
+	
+	switch(source.getSelectedIndex())
+	{
+	    case 0:
+		loadServerProperties();
+		loadServerLogProperties();
+		break;
+	    case 1:
+		loadLogTemplateProperties();
+		loadLogFileFiltersProperties();
+		break;
+	    case 2:
+		break;
+	    default:
+		break;
+	}
+    }//GEN-LAST:event_jTabbedPaneRootStateChanged
 
     // <editor-fold defaultstate="collapsed" desc="Generated Variables">
     // Variables declaration - do not modify//GEN-BEGIN:variables
