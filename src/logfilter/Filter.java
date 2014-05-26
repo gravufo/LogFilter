@@ -78,7 +78,7 @@ public class Filter implements Serializable
 	return lineAfter;
     }
 
-    public void setLineAfter(int lineAfter)
+    public void setLinesAfter(int lineAfter)
     {
 	this.lineAfter = lineAfter;
     }

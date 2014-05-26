@@ -14,6 +14,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.PasswordAuthentication;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import logfilter.Log;
@@ -69,10 +70,9 @@ public class Preferences implements Serializable
 	{
 	    FileOutputStream fos = new FileOutputStream(fileName);
 
-	    // TODO: Save every modification we did to the right instance
 	    try (ObjectOutputStream oos = new ObjectOutputStream(fos))
 	    {
-		// TODO: Save every modification we did to the right instance
+		// Save every modification we did to the right instance
 		savedInstance = new Preferences(instance);
 		
 		// Écrit toute l'instance (incluant ses attributs publics/privés)
@@ -86,7 +86,7 @@ public class Preferences implements Serializable
     
     public void cancel()
     {
-	// TODO: Reset every modification we did
+	// Reset every modification we did by copying the saved instance
 	instance = new Preferences(savedInstance);
     }
     
@@ -106,6 +106,19 @@ public class Preferences implements Serializable
 	}
     }
 
+    public ArrayList<String> getEnabledServers()
+    {
+	ArrayList<String> enabledServers = new ArrayList<>();
+	
+	for(Server s : serverMap.values())
+	{
+	    if (s.isEnabled())
+		enabledServers.add(s.getName());
+	}
+	
+	return enabledServers;
+    }
+    
     public Server getServer(String name)
     {
 	return instance.serverMap.get(name);
@@ -113,7 +126,7 @@ public class Preferences implements Serializable
 
     public boolean addServer(Server server)
     {
-	return instance.serverMap.putIfAbsent(server.getName(), server) == null;
+	return instance.serverMap.put(server.getName(), server) == null;
     }
     
     public boolean removeServer(String name)
@@ -128,7 +141,7 @@ public class Preferences implements Serializable
 
     public boolean addLog(Log log)
     {
-	return instance.logMap.putIfAbsent(log.getName(), log) == null;
+	return instance.logMap.put(log.getName(), log) == null;
     }
     
     public boolean removeLog(String name)

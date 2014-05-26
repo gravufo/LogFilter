@@ -6,14 +6,26 @@
 
 package ui;
 
+import java.awt.AWTKeyStroke;
+import java.awt.Component;
+import java.awt.Font;
+import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.net.PasswordAuthentication;
-import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
+import javax.swing.KeyStroke;
 import logfilter.Filter;
 import logfilter.Log;
 import logfilter.Server;
@@ -58,7 +70,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    setLocationRelativeTo(parent);
 	}
 	
-	// TODO Load the saved values (servers, logs, properties, etc.)
+	// Load the saved values (servers, logs, properties, etc.)
 	// Make sure they exist before doing so. Else, load defaults
 	for(String s : Preferences.getInstance().getServerMap().keySet())
 	    serverListModel.addElement(s);
@@ -66,25 +78,51 @@ public class PreferencesDialog extends javax.swing.JDialog
 	for(String s : Preferences.getInstance().getLogMap().keySet())
 	    templateLogFilesListModel.addElement(s);
 	
+	jListLogFileFilters.setCellRenderer(new LogFileFilterCellRenderer());
+	jListServers.setCellRenderer(new ServerCellRenderer());
+	
+	jListLogFileFilters.setSelectedIndex(0);
+	jListLogFiles.setSelectedIndex(0);
+	jListServers.setSelectedIndex(0);
+	jListTemplateLogFiles.setSelectedIndex(0);
+	
 	jTextFieldServerUsername.setText(Preferences.getInstance().getServerAccount().getUserName());
 	jPasswordFieldServerPassword.setText(String.valueOf(Preferences.getInstance().getServerAccount().getPassword()));
+
+	// Set the escape character to close the dialog
+	ActionListener escListener = new ActionListener()
+	{
+	    @Override
+	    public void actionPerformed(ActionEvent e)
+	    {
+		cancel();
+	    }
+	};
+
+	getRootPane().registerKeyboardAction(escListener, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+	// Make CTRL-TAB and CTRL-SHIFT-TAB work
+	setupTabTraversalKeys(jTabbedPaneRoot);
     }
 
-    public ArrayList<String> showDialog()
+    public void showDialog()
     {
 	setVisible(true);
 	
-	ArrayList<String> list = new ArrayList<>();
-	Enumeration<String> serverList = serverListModel.elements();
-	while(serverList.hasMoreElements())
-	    list.add(serverList.nextElement());
-	
-	return list;
+//	ArrayList<String> list = new ArrayList<>();
+//	Enumeration<String> serverList = serverListModel.elements();
+//	while(serverList.hasMoreElements())
+//	{
+//	    String currentServer = serverList.nextElement();
+//	    if(Preferences.getInstance().getServer(currentServer).isEnabled())
+//		list.add(currentServer);
+//	}
+//	return list;
     }
     
     private void loadServerProperties()
     {
-	if(serverListModel.isEmpty())
+	if (serverListModel.isEmpty() || jListServers.getSelectedIndex() == -1)
 	{
 	    jButtonAddLogFile.setEnabled(false);
 	    jButtonEditServer.setEnabled(false);
@@ -126,13 +164,13 @@ public class PreferencesDialog extends javax.swing.JDialog
     
     private void loadLogTemplateProperties()
     {
-	if(templateLogFilesListModel.isEmpty())
+	if (templateLogFilesListModel.isEmpty() || jListTemplateLogFiles.getSelectedIndex() == -1)
 	{
 	    jTextFieldLogFileName.setEnabled(false);
 	    jTextFieldLogFilePrefix.setEnabled(false);
 	    jTextFieldLogFilePath.setEnabled(false);
 	    jButtonLogFileFilterAdd.setEnabled(false);
-	    jButtonLogFileTemplateRemove.setEnabled(false);
+	    jButtonTemplateLogFileRemove.setEnabled(false);
 	    
 	    jTextFieldLogFileName.setText("");
 	    jTextFieldLogFilePrefix.setText("");
@@ -149,7 +187,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jTextFieldLogFilePrefix.setEnabled(true);
 	    jTextFieldLogFilePath.setEnabled(true);
 	    jButtonLogFileFilterAdd.setEnabled(true);
-	    jButtonLogFileTemplateRemove.setEnabled(true);
+	    jButtonTemplateLogFileRemove.setEnabled(true);
 
 	    jTextFieldLogFileName.setText(log.getName());
 	    jTextFieldLogFilePrefix.setText(log.getNamePrefix());
@@ -160,12 +198,14 @@ public class PreferencesDialog extends javax.swing.JDialog
 
 	    for(String s : log.getFilterMap().keySet())
 		logFileFilterModel.addElement(s);
+
+	    loadLogFileFiltersProperties();
 	}
     }
     
     private void loadLogFileFiltersProperties()
     {
-	if(logFileFilterModel.isEmpty())
+	if (logFileFilterModel.isEmpty() || jListLogFileFilters.getSelectedIndex() == -1)
 	{
 	    jCheckBoxLogFileFilterEnabled.setEnabled(false);
 	    jTextFieldLogFileFilterName.setEnabled(false);
@@ -209,7 +249,41 @@ public class PreferencesDialog extends javax.swing.JDialog
 	else
 	    jButtonRemoveLogFile.setEnabled(true);
     }
-    
+
+    private void cancel()
+    {
+	// Cancel changes before saving window prefs
+	Preferences.getInstance().cancel();
+
+	// For consistency, we save window location and size
+	Preferences.getInstance().setUIPreference(id, getBounds());
+	Preferences.getInstance().save();
+
+	// No need to save, so we just close pref window
+	dispose();
+    }
+
+    private static void setupTabTraversalKeys(JTabbedPane tabbedPane)
+    {
+	KeyStroke ctrlTab = KeyStroke.getKeyStroke("ctrl TAB");
+	KeyStroke ctrlShiftTab = KeyStroke.getKeyStroke("ctrl shift TAB");
+
+	// Remove ctrl-tab from normal focus traversal
+	Set<AWTKeyStroke> forwardKeys = new HashSet<>(tabbedPane.getFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS));
+	forwardKeys.remove(ctrlTab);
+	tabbedPane.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, forwardKeys);
+
+	// Remove ctrl-shift-tab from normal focus traversal
+	Set<AWTKeyStroke> backwardKeys = new HashSet<>(tabbedPane.getFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS));
+	backwardKeys.remove(ctrlShiftTab);
+	tabbedPane.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, backwardKeys);
+
+	// Add keys to the tab's input map
+	InputMap inputMap = tabbedPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+	inputMap.put(ctrlTab, "navigateNext");
+	inputMap.put(ctrlShiftTab, "navigatePrevious");
+    }
+
     /**
      * This method is called from within the constructor to
      * initialize the form.
@@ -273,8 +347,8 @@ public class PreferencesDialog extends javax.swing.JDialog
         jTextFieldLogFileFilterName = new javax.swing.JTextField();
         jLabelLogFileAlias = new javax.swing.JLabel();
         jTextFieldLogFileName = new javax.swing.JTextField();
-        jButtonLogFilesAdd = new javax.swing.JButton();
-        jButtonLogFileTemplateRemove = new javax.swing.JButton();
+        jButtonTemplateLogFileAdd = new javax.swing.JButton();
+        jButtonTemplateLogFileRemove = new javax.swing.JButton();
         jPanelMisc = new javax.swing.JPanel();
         jLabelCredentials = new javax.swing.JLabel();
         jSeparatorCredentials = new javax.swing.JSeparator();
@@ -287,7 +361,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Preferences");
-        setFocusable(false);
+        setFocusTraversalPolicyProvider(true);
         setIconImage(null);
         setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter()
@@ -306,8 +380,12 @@ public class PreferencesDialog extends javax.swing.JDialog
             }
         });
 
+        jPanelServersAndLogs.setFocusable(false);
+        jPanelServersAndLogs.setNextFocusableComponent(jListServers);
+
         jListServers.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jListServers.setToolTipText("This list contains all the servers added to the monitoring list, but not necessarily activated.");
+        jListServers.setNextFocusableComponent(jButtonAddServer);
         jListServers.addListSelectionListener(new javax.swing.event.ListSelectionListener()
         {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt)
@@ -330,6 +408,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jListLogFiles.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jListLogFiles.setToolTipText("This list contains the log files to monitor on the selected server.");
         jListLogFiles.setEnabled(false);
+        jListLogFiles.setNextFocusableComponent(jButtonAddLogFile);
         jListLogFiles.addListSelectionListener(new javax.swing.event.ListSelectionListener()
         {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt)
@@ -340,6 +419,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jScrollPaneLogFiles.setViewportView(jListLogFiles);
 
         jButtonAddServer.setText("Add...");
+        jButtonAddServer.setNextFocusableComponent(jButtonEditServer);
         jButtonAddServer.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -350,6 +430,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jButtonEditServer.setText("Edit...");
         jButtonEditServer.setEnabled(false);
+        jButtonEditServer.setNextFocusableComponent(jButtonRemoveServer);
         jButtonEditServer.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -360,6 +441,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jButtonRemoveServer.setText("Remove");
         jButtonRemoveServer.setEnabled(false);
+        jButtonRemoveServer.setNextFocusableComponent(jCheckBoxServerPropertiesEnabled);
         jButtonRemoveServer.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -370,6 +452,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jButtonAddLogFile.setText("Add...");
         jButtonAddLogFile.setEnabled(false);
+        jButtonAddLogFile.setNextFocusableComponent(jButtonRemoveLogFile);
         jButtonAddLogFile.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -380,6 +463,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jButtonRemoveLogFile.setText("Remove");
         jButtonRemoveLogFile.setEnabled(false);
+        jButtonRemoveLogFile.setNextFocusableComponent(jButtonOK);
         jButtonRemoveLogFile.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -400,6 +484,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         buttonGroupServerProperties.add(jRadioButtonServerConnectionTelnet);
         jRadioButtonServerConnectionTelnet.setText("Telnet");
         jRadioButtonServerConnectionTelnet.setEnabled(false);
+        jRadioButtonServerConnectionTelnet.setNextFocusableComponent(jRadioButtonServerConnectionSSH);
         jRadioButtonServerConnectionTelnet.setOpaque(false);
         jRadioButtonServerConnectionTelnet.addActionListener(new java.awt.event.ActionListener()
         {
@@ -412,6 +497,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jCheckBoxServerPropertiesEnabled.setText("Enabled");
         jCheckBoxServerPropertiesEnabled.setToolTipText("When checked, the selected server will be monitored using the log files shown on the right.");
         jCheckBoxServerPropertiesEnabled.setEnabled(false);
+        jCheckBoxServerPropertiesEnabled.setNextFocusableComponent(jRadioButtonServerConnectionTelnet);
         jCheckBoxServerPropertiesEnabled.setOpaque(false);
         jCheckBoxServerPropertiesEnabled.addActionListener(new java.awt.event.ActionListener()
         {
@@ -424,6 +510,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         buttonGroupServerProperties.add(jRadioButtonServerConnectionSSH);
         jRadioButtonServerConnectionSSH.setText("SSH");
         jRadioButtonServerConnectionSSH.setEnabled(false);
+        jRadioButtonServerConnectionSSH.setNextFocusableComponent(jListLogFiles);
         jRadioButtonServerConnectionSSH.setOpaque(false);
         jRadioButtonServerConnectionSSH.addActionListener(new java.awt.event.ActionListener()
         {
@@ -456,7 +543,7 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addComponent(jRadioButtonServerConnectionTelnet)
                 .addGap(18, 18, 18)
                 .addComponent(jRadioButtonServerConnectionSSH)
-                .addGap(0, 60, Short.MAX_VALUE))
+                .addGap(0, 81, Short.MAX_VALUE))
             .addComponent(jSeparatorServerMonitoring)
         );
         jPanelServerPropertiesLayout.setVerticalGroup(
@@ -502,16 +589,15 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addGroup(jPanelServersAndLogsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanelServersAndLogsLayout.createSequentialGroup()
                         .addGap(18, 18, 18)
+                        .addComponent(jLabelLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelServersAndLogsLayout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
                         .addGroup(jPanelServersAndLogsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanelServersAndLogsLayout.createSequentialGroup()
                                 .addComponent(jButtonAddLogFile)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jButtonRemoveLogFile)
-                                .addGap(0, 57, Short.MAX_VALUE))
-                            .addComponent(jLabelLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelServersAndLogsLayout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jScrollPaneLogFiles, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jButtonRemoveLogFile))
+                            .addComponent(jScrollPaneLogFiles, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addContainerGap())
         );
         jPanelServersAndLogsLayout.setVerticalGroup(
@@ -539,7 +625,10 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jTabbedPaneRoot.addTab("Servers", jPanelServersAndLogs);
 
+        jPanelTemplateLogFiles.setFocusable(false);
+
         jListTemplateLogFiles.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        jListTemplateLogFiles.setNextFocusableComponent(jButtonTemplateLogFileAdd);
         jListTemplateLogFiles.addListSelectionListener(new javax.swing.event.ListSelectionListener()
         {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt)
@@ -563,6 +652,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelTemplateLogFilePath.setFocusable(false);
 
         jTextFieldLogFilePath.setEnabled(false);
+        jTextFieldLogFilePath.setNextFocusableComponent(jListLogFileFilters);
         jTextFieldLogFilePath.addFocusListener(new java.awt.event.FocusAdapter()
         {
             public void focusLost(java.awt.event.FocusEvent evt)
@@ -572,6 +662,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         });
 
         jTextFieldLogFilePrefix.setEnabled(false);
+        jTextFieldLogFilePrefix.setNextFocusableComponent(jTextFieldLogFilePath);
         jTextFieldLogFilePrefix.addFocusListener(new java.awt.event.FocusAdapter()
         {
             public void focusLost(java.awt.event.FocusEvent evt)
@@ -589,6 +680,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelLogFileFilters.setFocusable(false);
 
         jListLogFileFilters.setEnabled(false);
+        jListLogFileFilters.setNextFocusableComponent(jButtonLogFileFilterAdd);
         jListLogFileFilters.addListSelectionListener(new javax.swing.event.ListSelectionListener()
         {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt)
@@ -600,6 +692,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jButtonLogFileFilterAdd.setText("Add Filter...");
         jButtonLogFileFilterAdd.setEnabled(false);
+        jButtonLogFileFilterAdd.setNextFocusableComponent(jButtonLogFileFilterRemove);
         jButtonLogFileFilterAdd.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -610,6 +703,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jButtonLogFileFilterRemove.setText("Remove");
         jButtonLogFileFilterRemove.setEnabled(false);
+        jButtonLogFileFilterRemove.setNextFocusableComponent(jCheckBoxLogFileFilterEnabled);
         jButtonLogFileFilterRemove.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -622,7 +716,15 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jCheckBoxLogFileFilterEnabled.setText("Enabled");
         jCheckBoxLogFileFilterEnabled.setEnabled(false);
+        jCheckBoxLogFileFilterEnabled.setNextFocusableComponent(jTextFieldLogFileFilterName);
         jCheckBoxLogFileFilterEnabled.setOpaque(false);
+        jCheckBoxLogFileFilterEnabled.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jCheckBoxLogFileFilterEnabledActionPerformed(evt);
+            }
+        });
 
         jLabelLogFileFilterPostPrint.setText("Number of lines to display after:");
         jLabelLogFileFilterPostPrint.setFocusable(false);
@@ -630,19 +732,53 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelLogFileFilterPrePrint.setText("Number of lines to display before:");
         jLabelLogFileFilterPrePrint.setFocusable(false);
 
+        jSpinnerLogFileFilterPrePrint.setModel(new javax.swing.SpinnerNumberModel(10, 0, 10000, 1));
         jSpinnerLogFileFilterPrePrint.setEnabled(false);
+        jSpinnerLogFileFilterPrePrint.setNextFocusableComponent(jSpinnerLogFileFilterPostPrint);
+        jSpinnerLogFileFilterPrePrint.addChangeListener(new javax.swing.event.ChangeListener()
+        {
+            public void stateChanged(javax.swing.event.ChangeEvent evt)
+            {
+                jSpinnerLogFileFilterPrePrintStateChanged(evt);
+            }
+        });
 
+        jSpinnerLogFileFilterPostPrint.setModel(new javax.swing.SpinnerNumberModel(10, 0, 10000, 1));
         jSpinnerLogFileFilterPostPrint.setEnabled(false);
+        jSpinnerLogFileFilterPostPrint.setNextFocusableComponent(jButtonOK);
+        jSpinnerLogFileFilterPostPrint.addChangeListener(new javax.swing.event.ChangeListener()
+        {
+            public void stateChanged(javax.swing.event.ChangeEvent evt)
+            {
+                jSpinnerLogFileFilterPostPrintStateChanged(evt);
+            }
+        });
 
         jLabelLogFileFilterKeyword.setText("String to find:");
         jLabelLogFileFilterKeyword.setFocusable(false);
 
         jTextFieldLogFileFilterKeyword.setEnabled(false);
+        jTextFieldLogFileFilterKeyword.setNextFocusableComponent(jSpinnerLogFileFilterPrePrint);
+        jTextFieldLogFileFilterKeyword.addFocusListener(new java.awt.event.FocusAdapter()
+        {
+            public void focusLost(java.awt.event.FocusEvent evt)
+            {
+                jTextFieldLogFileFilterKeywordFocusLost(evt);
+            }
+        });
 
         jLabelLogFileFilterName.setText("Name of the filter:");
         jLabelLogFileFilterName.setFocusable(false);
 
         jTextFieldLogFileFilterName.setEnabled(false);
+        jTextFieldLogFileFilterName.setNextFocusableComponent(jTextFieldLogFileFilterKeyword);
+        jTextFieldLogFileFilterName.addFocusListener(new java.awt.event.FocusAdapter()
+        {
+            public void focusLost(java.awt.event.FocusEvent evt)
+            {
+                jTextFieldLogFileFilterNameFocusLost(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanelFilterPropertiesLayout = new javax.swing.GroupLayout(jPanelFilterProperties);
         jPanelFilterProperties.setLayout(jPanelFilterPropertiesLayout);
@@ -700,6 +836,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelLogFileAlias.setText("Name or alias:");
 
         jTextFieldLogFileName.setEnabled(false);
+        jTextFieldLogFileName.setNextFocusableComponent(jTextFieldLogFilePrefix);
         jTextFieldLogFileName.addFocusListener(new java.awt.event.FocusAdapter()
         {
             public void focusLost(java.awt.event.FocusEvent evt)
@@ -784,22 +921,24 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addContainerGap())
         );
 
-        jButtonLogFilesAdd.setText("Add");
-        jButtonLogFilesAdd.addActionListener(new java.awt.event.ActionListener()
+        jButtonTemplateLogFileAdd.setText("Add");
+        jButtonTemplateLogFileAdd.setNextFocusableComponent(jButtonTemplateLogFileRemove);
+        jButtonTemplateLogFileAdd.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
-                jButtonLogFilesAddActionPerformed(evt);
+                jButtonTemplateLogFileAddActionPerformed(evt);
             }
         });
 
-        jButtonLogFileTemplateRemove.setText("Remove");
-        jButtonLogFileTemplateRemove.setEnabled(false);
-        jButtonLogFileTemplateRemove.addActionListener(new java.awt.event.ActionListener()
+        jButtonTemplateLogFileRemove.setText("Remove");
+        jButtonTemplateLogFileRemove.setEnabled(false);
+        jButtonTemplateLogFileRemove.setNextFocusableComponent(jTextFieldLogFileName);
+        jButtonTemplateLogFileRemove.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
-                jButtonLogFileTemplateRemoveActionPerformed(evt);
+                jButtonTemplateLogFileRemoveActionPerformed(evt);
             }
         });
 
@@ -813,9 +952,9 @@ public class PreferencesDialog extends javax.swing.JDialog
                     .addComponent(jLabelTemplateLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jScrollPaneTemplateLogFiles, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addGroup(jPanelTemplateLogFilesLayout.createSequentialGroup()
-                        .addComponent(jButtonLogFilesAdd)
+                        .addComponent(jButtonTemplateLogFileAdd)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jButtonLogFileTemplateRemove)))
+                        .addComponent(jButtonTemplateLogFileRemove)))
                 .addGap(18, 18, 18)
                 .addComponent(jPanelTemplateLogFileProperties, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -828,8 +967,8 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addComponent(jScrollPaneTemplateLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, 345, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelTemplateLogFilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButtonLogFilesAdd)
-                    .addComponent(jButtonLogFileTemplateRemove))
+                    .addComponent(jButtonTemplateLogFileAdd)
+                    .addComponent(jButtonTemplateLogFileRemove))
                 .addContainerGap())
             .addComponent(jPanelTemplateLogFileProperties, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
@@ -837,6 +976,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jTabbedPaneRoot.addTab("Template Log Files", jPanelTemplateLogFiles);
 
         jPanelMisc.setFocusable(false);
+        jPanelMisc.setNextFocusableComponent(jTextFieldServerUsername);
 
         jLabelCredentials.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jLabelCredentials.setText("Credentials");
@@ -846,6 +986,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelServerUsername.setFocusable(false);
 
         jTextFieldServerUsername.setText("bwadmin");
+        jTextFieldServerUsername.setNextFocusableComponent(jPasswordFieldServerPassword);
         jTextFieldServerUsername.addFocusListener(new java.awt.event.FocusAdapter()
         {
             public void focusLost(java.awt.event.FocusEvent evt)
@@ -891,7 +1032,7 @@ public class PreferencesDialog extends javax.swing.JDialog
                         .addComponent(jLabelServerPassword)
                         .addGap(20, 20, 20)
                         .addComponent(jPasswordFieldServerPassword, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(494, Short.MAX_VALUE))
+                .addContainerGap(536, Short.MAX_VALUE))
         );
         jPanelMiscLayout.setVerticalGroup(
             jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -914,6 +1055,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jTabbedPaneRoot.addTab("Miscellaneous", jPanelMisc);
 
         jButtonCancel.setText("Cancel");
+        jButtonCancel.setNextFocusableComponent(jTabbedPaneRoot);
         jButtonCancel.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -923,6 +1065,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         });
 
         jButtonOK.setText("OK");
+        jButtonOK.setNextFocusableComponent(jButtonCancel);
         jButtonOK.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -959,11 +1102,16 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void jButtonAddServerActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonAddServerActionPerformed
     {//GEN-HEADEREND:event_jButtonAddServerActionPerformed
-        boolean success;
-	
+	boolean success = true;
+	String[] server = {"", ""};
 	do
 	{
-	    String[] server = new ServerDialog(this, true, false, null).showDialog();
+	    if (!success)
+	    {
+		server = new ServerDialog(this, true, true, server[0], server [1]).showDialog();
+	    }
+	    else
+		server = new ServerDialog(this, true, false, null, null).showDialog();
 	
 	    // Verify if the user cancelled
 	    if(server[0].equals("") || server[1].equals(""))
@@ -995,8 +1143,8 @@ public class PreferencesDialog extends javax.swing.JDialog
 	
     }//GEN-LAST:event_jButtonAddServerActionPerformed
 
-    private void jButtonLogFilesAddActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonLogFilesAddActionPerformed
-    {//GEN-HEADEREND:event_jButtonLogFilesAddActionPerformed
+    private void jButtonTemplateLogFileAddActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonTemplateLogFileAddActionPerformed
+    {//GEN-HEADEREND:event_jButtonTemplateLogFileAddActionPerformed
 	String name = "New Log File";
 	
 	if(templateLogFilesListModel.contains(name))
@@ -1012,24 +1160,15 @@ public class PreferencesDialog extends javax.swing.JDialog
 	// Select the new item and save in prefs
 	Preferences.getInstance().addLog(new Log(name));
 	jListTemplateLogFiles.setSelectedIndex(templateLogFilesListModel.size() - 1);
-    }//GEN-LAST:event_jButtonLogFilesAddActionPerformed
+    }//GEN-LAST:event_jButtonTemplateLogFileAddActionPerformed
 
     private void jTextFieldServerUsernameActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jTextFieldServerUsernameActionPerformed
     {//GEN-HEADEREND:event_jTextFieldServerUsernameActionPerformed
-        // TODO add your handling code here:
     }//GEN-LAST:event_jTextFieldServerUsernameActionPerformed
 
     private void jButtonCancelActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonCancelActionPerformed
     {//GEN-HEADEREND:event_jButtonCancelActionPerformed
-	// Cancel changes before saving window prefs
-	Preferences.getInstance().cancel();
-
-	// For consistency, we save window location and size
-	Preferences.getInstance().setUIPreference(id, getBounds());
-	Preferences.getInstance().save();
-
-	// No need to save, so we just close pref window
-        dispose();
+	cancel();
     }//GEN-LAST:event_jButtonCancelActionPerformed
 
     private void jButtonOKActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonOKActionPerformed
@@ -1065,7 +1204,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	
 	do
 	{
-	    String[] server = new ServerDialog(this, true, true, serverToEdit).showDialog();
+	    String[] server = new ServerDialog(this, true, true, serverToEdit.getName(), serverToEdit.getHostname()).showDialog();
 
 	    // Remove the server temporarily
 	    serverListModel.removeElement((String) jListServers.getSelectedValue());
@@ -1106,13 +1245,17 @@ public class PreferencesDialog extends javax.swing.JDialog
 	Server serverToEdit = Preferences.getInstance().getServer((String) jListServers.getSelectedValue());
 	
 	// Remove it from the list
+	int index = serverListModel.indexOf((String) jListServers.getSelectedValue());
 	serverListModel.removeElement((String) jListServers.getSelectedValue());
 	
 	// Remove it from the prefs
 	Preferences.getInstance().removeServer(serverToEdit.getName());
 	
-	// Change list selection to first element and load its properties
-	jListServers.setSelectedIndex(0);
+	// Change list selection to the previous element and load its properties
+	if(index != 0)
+	    --index;
+	
+	jListServers.setSelectedIndex(index);
 	
 	// Reload properties
 	loadServerProperties();
@@ -1124,6 +1267,8 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setEnabled(true);
 	else
 	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setEnabled(false);
+	
+	jListServers.repaint();
     }//GEN-LAST:event_jCheckBoxServerPropertiesEnabledActionPerformed
 
     private void jRadioButtonServerConnectionTelnetActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jRadioButtonServerConnectionTelnetActionPerformed
@@ -1158,8 +1303,8 @@ public class PreferencesDialog extends javax.swing.JDialog
         Preferences.getInstance().setServerAccount(new PasswordAuthentication(jTextFieldServerUsername.getText(), jPasswordFieldServerPassword.getPassword()));
     }//GEN-LAST:event_jPasswordFieldServerPasswordFocusLost
 
-    private void jButtonLogFileTemplateRemoveActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonLogFileTemplateRemoveActionPerformed
-    {//GEN-HEADEREND:event_jButtonLogFileTemplateRemoveActionPerformed
+    private void jButtonTemplateLogFileRemoveActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonTemplateLogFileRemoveActionPerformed
+    {//GEN-HEADEREND:event_jButtonTemplateLogFileRemoveActionPerformed
         String name = (String) jListTemplateLogFiles.getSelectedValue();
 	
 	// Remove this entry from all the servers, if they have it
@@ -1169,15 +1314,19 @@ public class PreferencesDialog extends javax.swing.JDialog
 	}
 	
 	// Remove from the preferences and the list
+	int index = templateLogFilesListModel.indexOf(name);
 	templateLogFilesListModel.removeElement(name);
 	Preferences.getInstance().removeLog(name);
 	
 	// Select first element in the list
-	jListTemplateLogFiles.setSelectedIndex(0);
+	if(index != 0)
+	    --index;
+	
+	jListTemplateLogFiles.setSelectedIndex(index);
 	
 	// Reload properties in case there are no more elements
 	loadLogTemplateProperties();
-    }//GEN-LAST:event_jButtonLogFileTemplateRemoveActionPerformed
+    }//GEN-LAST:event_jButtonTemplateLogFileRemoveActionPerformed
 
     private void jListTemplateLogFilesValueChanged(javax.swing.event.ListSelectionEvent evt)//GEN-FIRST:event_jListTemplateLogFilesValueChanged
     {//GEN-HEADEREND:event_jListTemplateLogFilesValueChanged
@@ -1202,6 +1351,18 @@ public class PreferencesDialog extends javax.swing.JDialog
 	{
 	    JOptionPane.showMessageDialog(this, "Name cannot be empty!");
 	    jTextFieldLogFileName.setText((String) jListTemplateLogFiles.getSelectedValue());
+	    return;
+	}
+	else if(jTextFieldLogFileName.getText().equals((String) jListTemplateLogFiles.getSelectedValue()))
+	{
+	    // No change has been done, so we just disregard this event
+	    return;
+	}
+	else if (templateLogFilesListModel.contains(jTextFieldLogFileName.getText()))
+	{
+	    JOptionPane.showMessageDialog(this, "There is another entry with the same name!");
+	    jTextFieldLogFileName.setText((String) jListTemplateLogFiles.getSelectedValue());
+	    return;
 	}
 	
 	Preferences.getInstance().removeLog((String) jListTemplateLogFiles.getSelectedValue());
@@ -1282,11 +1443,14 @@ public class PreferencesDialog extends javax.swing.JDialog
 	Log log = Preferences.getInstance().getLog((String)jListTemplateLogFiles.getSelectedValue());
 	
 	// Remove the filter from that log and the list
+	int index = logFileFilterModel.indexOf((String) jListLogFileFilters.getSelectedValue());
 	log.removeFilter((String) jListLogFileFilters.getSelectedValue());
 	logFileFilterModel.removeElement((String) jListLogFileFilters.getSelectedValue());
 	
 	// Update selection in the list
-	jListLogFileFilters.setSelectedIndex(0);
+	if(index != 0)
+	    --index;
+	jListLogFileFilters.setSelectedIndex(index);
 	
 	// Reload properties in case list is empty (then it won't update)
 	loadLogFileFiltersProperties();
@@ -1319,10 +1483,14 @@ public class PreferencesDialog extends javax.swing.JDialog
 	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).removeLog((String) jListLogFiles.getSelectedValue());
 	
 	// Remove it from the current list
+	int index = serverLogFilesListModel.indexOf((String) jListLogFiles.getSelectedValue());
 	serverLogFilesListModel.removeElement((String) jListLogFiles.getSelectedValue());
 	
 	// Select first object
-	jListLogFiles.setSelectedIndex(0);
+	if(index != 0)
+	    --index;
+	
+	jListLogFiles.setSelectedIndex(index);
 	
 	// Reload properties in case there are no other objects
 	loadServerLogProperties();
@@ -1337,18 +1505,133 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    case 0:
 		loadServerProperties();
 		loadServerLogProperties();
+		//jButtonAddServer.requestFocus();
 		break;
 	    case 1:
 		loadLogTemplateProperties();
 		loadLogFileFiltersProperties();
+		//jButtonTemplateLogFileAdd.requestFocus();
 		break;
 	    case 2:
+		//jTextFieldServerUsername.requestFocus();
 		break;
 	    default:
 		break;
 	}
     }//GEN-LAST:event_jTabbedPaneRootStateChanged
 
+    private void jCheckBoxLogFileFilterEnabledActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jCheckBoxLogFileFilterEnabledActionPerformed
+    {//GEN-HEADEREND:event_jCheckBoxLogFileFilterEnabledActionPerformed
+        String filterName = (String) jListLogFileFilters.getSelectedValue();
+	String logName = (String)jListTemplateLogFiles.getSelectedValue();
+	Preferences.getInstance().getLog(logName).getFilter(filterName).setEnabled(jCheckBoxLogFileFilterEnabled.isSelected());
+
+	// Repaint the list to update BOLD display
+	jListLogFileFilters.repaint();
+    }//GEN-LAST:event_jCheckBoxLogFileFilterEnabledActionPerformed
+
+    private void jTextFieldLogFileFilterNameFocusLost(java.awt.event.FocusEvent evt)//GEN-FIRST:event_jTextFieldLogFileFilterNameFocusLost
+    {//GEN-HEADEREND:event_jTextFieldLogFileFilterNameFocusLost
+	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
+	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
+
+	if(jTextFieldLogFileFilterName.getText().equals(""))
+	{
+	    JOptionPane.showMessageDialog(this, "The name cannot be empty!");
+	    jTextFieldLogFileFilterName.setText((String) jListLogFileFilters.getSelectedValue());
+	    return;
+	}
+	else if(jTextFieldLogFileFilterName.getText().equals((String) jListLogFileFilters.getSelectedValue()))
+	{
+	    // No change has been done, so we just disregard this event
+	    return;
+	}
+	else if(logFileFilterModel.contains(jTextFieldLogFileFilterName.getText()))
+	{
+	    JOptionPane.showMessageDialog(this, "There is another entry with the same name!");
+	    jTextFieldLogFileFilterName.setText((String) jListLogFileFilters.getSelectedValue());
+	    return;
+	}
+
+	currentFilter.setName(jTextFieldLogFileFilterName.getText());
+
+	currentLog.removeFilter((String) jListLogFileFilters.getSelectedValue());
+	currentLog.addFilter(currentFilter);
+
+	int index = jListLogFileFilters.getSelectedIndex();
+	logFileFilterModel.remove(index);
+	logFileFilterModel.add(index, currentFilter.getName());
+	jListLogFileFilters.setSelectedIndex(index);
+    }//GEN-LAST:event_jTextFieldLogFileFilterNameFocusLost
+
+    private void jTextFieldLogFileFilterKeywordFocusLost(java.awt.event.FocusEvent evt)//GEN-FIRST:event_jTextFieldLogFileFilterKeywordFocusLost
+    {//GEN-HEADEREND:event_jTextFieldLogFileFilterKeywordFocusLost
+	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
+	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
+
+	currentFilter.setKeyword(jTextFieldLogFileFilterKeyword.getText());
+    }//GEN-LAST:event_jTextFieldLogFileFilterKeywordFocusLost
+
+    private void jSpinnerLogFileFilterPrePrintStateChanged(javax.swing.event.ChangeEvent evt)//GEN-FIRST:event_jSpinnerLogFileFilterPrePrintStateChanged
+    {//GEN-HEADEREND:event_jSpinnerLogFileFilterPrePrintStateChanged
+	if (jListLogFileFilters.getSelectedValue() == null)
+	    return;
+
+	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
+	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
+	
+	currentFilter.setLinesAfter((int)jSpinnerLogFileFilterPrePrint.getValue());
+    }//GEN-LAST:event_jSpinnerLogFileFilterPrePrintStateChanged
+
+    private void jSpinnerLogFileFilterPostPrintStateChanged(javax.swing.event.ChangeEvent evt)//GEN-FIRST:event_jSpinnerLogFileFilterPostPrintStateChanged
+    {//GEN-HEADEREND:event_jSpinnerLogFileFilterPostPrintStateChanged
+	if(jListLogFileFilters.getSelectedValue() == null)
+	    return;
+
+	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
+	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
+
+	currentFilter.setLinesAfter((int)jSpinnerLogFileFilterPostPrint.getValue());
+    }//GEN-LAST:event_jSpinnerLogFileFilterPostPrintStateChanged
+
+    class ServerCellRenderer extends DefaultListCellRenderer
+    {
+	@Override
+	public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus)
+	{
+	    Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+	    if ((Preferences.getInstance().getServer((String) value)).isEnabled())
+	    {
+		c.setFont(c.getFont().deriveFont(Font.BOLD));
+	    }
+	    else
+	    {
+		c.setFont(c.getFont().deriveFont(Font.PLAIN));
+	    }
+	    return c;
+	}
+    }
+    
+    class LogFileFilterCellRenderer extends DefaultListCellRenderer
+    {
+	@Override
+	public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus)
+	{
+	    Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+	    if ((Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue())).getFilter((String) value).isEnabled())
+	    {
+		c.setFont(c.getFont().deriveFont(Font.BOLD));
+	    }
+	    else
+	    {
+		c.setFont(c.getFont().deriveFont(Font.PLAIN));
+	    }
+	    return c;
+	}
+    }
+    
     // <editor-fold defaultstate="collapsed" desc="Generated Variables">
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroupServerProperties;
@@ -1358,11 +1641,11 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JButton jButtonEditServer;
     private javax.swing.JButton jButtonLogFileFilterAdd;
     private javax.swing.JButton jButtonLogFileFilterRemove;
-    private javax.swing.JButton jButtonLogFileTemplateRemove;
-    private javax.swing.JButton jButtonLogFilesAdd;
     private javax.swing.JButton jButtonOK;
     private javax.swing.JButton jButtonRemoveLogFile;
     private javax.swing.JButton jButtonRemoveServer;
+    private javax.swing.JButton jButtonTemplateLogFileAdd;
+    private javax.swing.JButton jButtonTemplateLogFileRemove;
     private javax.swing.JCheckBox jCheckBoxLogFileFilterEnabled;
     private javax.swing.JCheckBox jCheckBoxServerPropertiesEnabled;
     private javax.swing.JLabel jLabelCredentials;

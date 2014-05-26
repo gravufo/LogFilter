@@ -11,6 +11,7 @@
   </SyntheticProperties>
   <Events>
     <EventHandler event="windowClosing" listener="java.awt.event.WindowListener" parameters="java.awt.event.WindowEvent" handler="formWindowClosing"/>
+    <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="formKeyReleased"/>
   </Events>
   <AuxValues>
     <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
@@ -38,6 +39,9 @@
   </Layout>
   <SubComponents>
     <Container class="javax.swing.JPanel" name="jPanelRoot">
+      <Events>
+        <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jPanelRootKeyReleased"/>
+      </Events>
 
       <Layout>
         <DimensionLayout dim="0">
@@ -98,6 +102,11 @@
           </Properties>
         </Component>
         <Component class="javax.swing.JTextField" name="jTextFieldHostname">
+          <Events>
+            <EventHandler event="keyPressed" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextFieldHostnameKeyPressed"/>
+            <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextFieldHostnameKeyReleased"/>
+            <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextFieldHostnameKeyTyped"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JButton" name="jButtonOK">
           <Properties>
@@ -121,6 +130,11 @@
           </Properties>
         </Component>
         <Component class="javax.swing.JTextField" name="jTextFieldServerName">
+          <Events>
+            <EventHandler event="keyPressed" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextFieldServerNameKeyPressed"/>
+            <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextFieldServerNameKeyReleased"/>
+            <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextFieldServerNameKeyTyped"/>
+          </Events>
         </Component>
       </SubComponents>
     </Container>

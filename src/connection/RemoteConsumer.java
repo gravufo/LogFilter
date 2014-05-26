@@ -17,11 +17,11 @@
 //
 //    public RemoteConsumer(int y)
 //    {
-//	lines = new char[y][];
+//	lines = new char[][];
 //	posy = 0;
 //	posx = 0;
 //    }
-//    
+//
 //    private void addText(byte[] data, int len)
 //    {
 //	for (int i = 0; i < len; i++)

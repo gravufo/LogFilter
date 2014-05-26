@@ -17,7 +17,6 @@ public class Main
      */
     public static void main(String[] args)
     {
-        // TODO code application logic here
         try
         {
 	    // Set System Look and Feel

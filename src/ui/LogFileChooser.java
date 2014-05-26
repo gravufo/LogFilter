@@ -63,14 +63,16 @@ public class LogFileChooser extends javax.swing.JDialog
     private void initComponents()
     {
 
-        jPanel1 = new javax.swing.JPanel();
+        jPanelRoot = new javax.swing.JPanel();
         jButtonCancel = new javax.swing.JButton();
         jButtonSelect = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
+        jScrollPaneAvailableLogFiles = new javax.swing.JScrollPane();
         jListAvailableLogFiles = new javax.swing.JList();
+        jLabelDescription = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Add Log File");
+        setMinimumSize(new java.awt.Dimension(180, 352));
         setModal(true);
 
         jButtonCancel.setText("Cancel");
@@ -93,6 +95,7 @@ public class LogFileChooser extends javax.swing.JDialog
         });
 
         jListAvailableLogFiles.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        jListAvailableLogFiles.setToolTipText("This list contains the log file profiles defined in the \"Template Log Files\" tab of the Preferences window.");
         jListAvailableLogFiles.addListSelectionListener(new javax.swing.event.ListSelectionListener()
         {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt)
@@ -100,30 +103,37 @@ public class LogFileChooser extends javax.swing.JDialog
                 jListAvailableLogFilesValueChanged(evt);
             }
         });
-        jScrollPane1.setViewportView(jListAvailableLogFiles);
+        jScrollPaneAvailableLogFiles.setViewportView(jListAvailableLogFiles);
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+        jLabelDescription.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
+        jLabelDescription.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabelDescription.setText("Template log files to add:");
+        jLabelDescription.setFocusable(false);
+
+        javax.swing.GroupLayout jPanelRootLayout = new javax.swing.GroupLayout(jPanelRoot);
+        jPanelRoot.setLayout(jPanelRootLayout);
+        jPanelRootLayout.setHorizontalGroup(
+            jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelRootLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelRootLayout.createSequentialGroup()
                         .addComponent(jButtonSelect, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 30, Short.MAX_VALUE)
                         .addComponent(jButtonCancel))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
+                    .addComponent(jScrollPaneAvailableLogFiles, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addComponent(jLabelDescription, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+        jPanelRootLayout.setVerticalGroup(
+            jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelRootLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 274, Short.MAX_VALUE)
+                .addComponent(jLabelDescription)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addComponent(jScrollPaneAvailableLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButtonCancel)
                     .addComponent(jButtonSelect))
                 .addContainerGap())
@@ -133,11 +143,11 @@ public class LogFileChooser extends javax.swing.JDialog
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanelRoot, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanelRoot, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         pack();
@@ -169,9 +179,10 @@ public class LogFileChooser extends javax.swing.JDialog
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonSelect;
+    private javax.swing.JLabel jLabelDescription;
     private javax.swing.JList jListAvailableLogFiles;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JPanel jPanelRoot;
+    private javax.swing.JScrollPane jScrollPaneAvailableLogFiles;
     // End of variables declaration//GEN-END:variables
 
     private DefaultListModel logList;

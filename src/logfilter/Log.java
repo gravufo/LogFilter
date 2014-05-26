@@ -74,7 +74,7 @@ public class Log implements Serializable
     
     public boolean addFilter(Filter filter)
     {
-	return filterMap.putIfAbsent(filter.getName(), filter) == null;
+	return filterMap.put(filter.getName(), filter) == null;
     }
     
     public boolean removeFilter(String name)
