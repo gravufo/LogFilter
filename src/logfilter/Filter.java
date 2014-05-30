@@ -1,14 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package logfilter;
 
 import java.io.Serializable;
 
 /**
+ * This class represents a filter profile
  *
  * @author cartin
  */
@@ -60,7 +55,7 @@ public class Filter implements Serializable
 
     public void setKeyword(String keyword)
     {
-	this.keyword = keyword;
+	this.keyword = keyword.toLowerCase();
     }
 
     public int getLinesBefore()
@@ -82,10 +77,29 @@ public class Filter implements Serializable
     {
 	this.lineAfter = lineAfter;
     }
-    
+
+    /**
+     * Determines whether this filter is activated (true) or not (false).
+     */
     private boolean enabled;
+
+    /**
+     * Contains the name of the filter profile
+     */
     private String name;
+
+    /**
+     * Contains the keyword that should be used to filter logs
+     */
     private String keyword;
+
+    /**
+     * Contains the number of lines that should be displayed before the keyword
+     */
     private int linesBefore;
+
+    /**
+     * Contains the number of lines that should be displayed after the keyword
+     */
     private int lineAfter;
 }

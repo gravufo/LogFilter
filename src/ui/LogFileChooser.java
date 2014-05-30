@@ -1,16 +1,13 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package ui;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
 import javax.swing.DefaultListModel;
 import javax.swing.JDialog;
 
 /**
+ * This dialog displays a list of template logs available for the selected
+ * server
  *
  * @author cartin
  */
@@ -40,12 +37,12 @@ public class LogFileChooser extends javax.swing.JDialog
 	
 	jListAvailableLogFiles.setModel(this.logList);
 	
-	logSelected = "";
+	logSelected = new ArrayList<>();
 	
 	setLocationRelativeTo(parent);
     }
 
-    public String showDialog()
+    public ArrayList<String> showDialog()
     {
 	setVisible(true);
 	
@@ -94,7 +91,6 @@ public class LogFileChooser extends javax.swing.JDialog
             }
         });
 
-        jListAvailableLogFiles.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jListAvailableLogFiles.setToolTipText("This list contains the log file profiles defined in the \"Template Log Files\" tab of the Preferences window.");
         jListAvailableLogFiles.addListSelectionListener(new javax.swing.event.ListSelectionListener()
         {
@@ -162,7 +158,7 @@ public class LogFileChooser extends javax.swing.JDialog
 	else
 	{
 	    jButtonSelect.setEnabled(true);
-	    logSelected = (String) jListAvailableLogFiles.getSelectedValue();
+	    logSelected = new ArrayList<>(jListAvailableLogFiles.getSelectedValuesList());
 	}
     }//GEN-LAST:event_jListAvailableLogFilesValueChanged
 
@@ -186,5 +182,5 @@ public class LogFileChooser extends javax.swing.JDialog
     // End of variables declaration//GEN-END:variables
 
     private DefaultListModel logList;
-    private String logSelected;
+    private ArrayList<String> logSelected;
 }

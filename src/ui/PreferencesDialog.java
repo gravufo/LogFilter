@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package ui;
 
 import java.awt.AWTKeyStroke;
@@ -15,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.net.PasswordAuthentication;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.DefaultListCellRenderer;
@@ -32,6 +27,7 @@ import logfilter.Server;
 import persistence.Preferences;
 
 /**
+ * This class is represents the Preferences dialog and all its logic
  *
  * @author cartin
  */
@@ -39,29 +35,30 @@ public class PreferencesDialog extends javax.swing.JDialog
 {
 
     /**
-     * Creates new form NewJDialog
+     * Creates new Preferences dialog
+     *
      * @param parent
      * @param modal
      */
     public PreferencesDialog(JFrame parent, boolean modal)
     {
 	super(parent, modal);
-	
+
 	templateLogFilesListModel = new DefaultListModel();
 	serverListModel = new DefaultListModel();
 	serverLogFilesListModel = new DefaultListModel();
 	logFileFilterModel = new DefaultListModel();
-	
+
 	initComponents();
-	
+
 	jListServers.setModel(serverListModel);
 	jListLogFiles.setModel(serverLogFilesListModel);
 	jListTemplateLogFiles.setModel(templateLogFilesListModel);
 	jListLogFileFilters.setModel(logFileFilterModel);
-	
+
 	Rectangle r = Preferences.getInstance().getUIPreference(id);
-	
-	if(r != null)
+
+	if (r != null)
 	{
 	    setBounds(r);
 	}
@@ -69,23 +66,27 @@ public class PreferencesDialog extends javax.swing.JDialog
 	{
 	    setLocationRelativeTo(parent);
 	}
-	
+
 	// Load the saved values (servers, logs, properties, etc.)
 	// Make sure they exist before doing so. Else, load defaults
-	for(String s : Preferences.getInstance().getServerMap().keySet())
+	for (String s : Preferences.getInstance().getServerMap().keySet())
+	{
 	    serverListModel.addElement(s);
-	
-	for(String s : Preferences.getInstance().getLogMap().keySet())
+	}
+
+	for (String s : Preferences.getInstance().getLogMap().keySet())
+	{
 	    templateLogFilesListModel.addElement(s);
-	
+	}
+
 	jListLogFileFilters.setCellRenderer(new LogFileFilterCellRenderer());
 	jListServers.setCellRenderer(new ServerCellRenderer());
-	
+
 	jListLogFileFilters.setSelectedIndex(0);
 	jListLogFiles.setSelectedIndex(0);
 	jListServers.setSelectedIndex(0);
 	jListTemplateLogFiles.setSelectedIndex(0);
-	
+
 	jTextFieldServerUsername.setText(Preferences.getInstance().getServerAccount().getUserName());
 	jPasswordFieldServerPassword.setText(String.valueOf(Preferences.getInstance().getServerAccount().getPassword()));
 
@@ -108,7 +109,7 @@ public class PreferencesDialog extends javax.swing.JDialog
     public void showDialog()
     {
 	setVisible(true);
-	
+
 //	ArrayList<String> list = new ArrayList<>();
 //	Enumeration<String> serverList = serverListModel.elements();
 //	while(serverList.hasMoreElements())
@@ -119,7 +120,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 //	}
 //	return list;
     }
-    
+
     private void loadServerProperties()
     {
 	if (serverListModel.isEmpty() || jListServers.getSelectedIndex() == -1)
@@ -131,11 +132,11 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jRadioButtonServerConnectionSSH.setEnabled(false);
 	    jRadioButtonServerConnectionTelnet.setEnabled(false);
 	    jListLogFiles.setEnabled(false);
-	    
+
 	    jCheckBoxServerPropertiesEnabled.setSelected(false);
 	    jRadioButtonServerConnectionSSH.setSelected(false);
 	    jRadioButtonServerConnectionTelnet.setSelected(false);
-	    
+
 	    serverLogFilesListModel.clear();
 	}
 	else
@@ -149,19 +150,30 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    // TODO: improvement: sort the list by enabled first (or by user choice, saved index)
 	    serverLogFilesListModel.clear();
 
-	    for(String s : server.getLogList())
+	    for (String s : server.getLogList())
+	    {
 		serverLogFilesListModel.addElement(s);
+	    }
 
 	    jButtonAddLogFile.setEnabled(true);
 	    jButtonEditServer.setEnabled(true);
 	    jButtonRemoveServer.setEnabled(true);
-	    jCheckBoxServerPropertiesEnabled.setEnabled(true);
+
+	    if (server.getLogList().isEmpty())
+	    {
+		jCheckBoxServerPropertiesEnabled.setEnabled(false);
+	    }
+	    else
+	    {
+		jCheckBoxServerPropertiesEnabled.setEnabled(true);
+	    }
+
 	    jRadioButtonServerConnectionSSH.setEnabled(true);
 	    jRadioButtonServerConnectionTelnet.setEnabled(true);
 	    jListLogFiles.setEnabled(true);
 	}
     }
-    
+
     private void loadLogTemplateProperties()
     {
 	if (templateLogFilesListModel.isEmpty() || jListTemplateLogFiles.getSelectedIndex() == -1)
@@ -171,7 +183,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jTextFieldLogFilePath.setEnabled(false);
 	    jButtonLogFileFilterAdd.setEnabled(false);
 	    jButtonTemplateLogFileRemove.setEnabled(false);
-	    
+
 	    jTextFieldLogFileName.setText("");
 	    jTextFieldLogFilePrefix.setText("");
 	    jTextFieldLogFilePath.setText("");
@@ -196,13 +208,15 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jListLogFileFilters.setEnabled(true);
 	    logFileFilterModel.clear();
 
-	    for(String s : log.getFilterMap().keySet())
+	    for (String s : log.getFilterMap().keySet())
+	    {
 		logFileFilterModel.addElement(s);
+	    }
 
 	    loadLogFileFiltersProperties();
 	}
     }
-    
+
     private void loadLogFileFiltersProperties()
     {
 	if (logFileFilterModel.isEmpty() || jListLogFileFilters.getSelectedIndex() == -1)
@@ -212,9 +226,9 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jTextFieldLogFileFilterKeyword.setEnabled(false);
 	    jSpinnerLogFileFilterPrePrint.setEnabled(false);
 	    jSpinnerLogFileFilterPostPrint.setEnabled(false);
-	    
+
 	    jButtonLogFileFilterRemove.setEnabled(false);
-	    
+
 	    jCheckBoxLogFileFilterEnabled.setSelected(false);
 	    jTextFieldLogFileFilterName.setText("");
 	    jTextFieldLogFileFilterKeyword.setText("");
@@ -241,13 +255,27 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jSpinnerLogFileFilterPostPrint.setValue(filter.getLineAfter());
 	}
     }
-    
+
     private void loadServerLogProperties()
     {
-	if(serverLogFilesListModel.isEmpty())
+	if (serverLogFilesListModel.isEmpty())
+	{
+	    if (jListServers.getSelectedIndex() != -1)
+	    {
+		jCheckBoxServerPropertiesEnabled.setEnabled(false);
+	    }
+
 	    jButtonRemoveLogFile.setEnabled(false);
+	}
 	else
+	{
+	    if (jListServers.getSelectedIndex() != -1)
+	    {
+		jCheckBoxServerPropertiesEnabled.setEnabled(true);
+	    }
+
 	    jButtonRemoveLogFile.setEnabled(true);
+	}
     }
 
     private void cancel()
@@ -994,13 +1022,6 @@ public class PreferencesDialog extends javax.swing.JDialog
                 jTextFieldServerUsernameFocusLost(evt);
             }
         });
-        jTextFieldServerUsername.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                jTextFieldServerUsernameActionPerformed(evt);
-            }
-        });
 
         jLabelServerPassword.setText("Password:");
         jLabelServerPassword.setFocusable(false);
@@ -1103,35 +1124,40 @@ public class PreferencesDialog extends javax.swing.JDialog
     private void jButtonAddServerActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonAddServerActionPerformed
     {//GEN-HEADEREND:event_jButtonAddServerActionPerformed
 	boolean success = true;
-	String[] server = {"", ""};
+	String[] server =
+	{
+	    "", ""
+	};
 	do
 	{
 	    if (!success)
 	    {
-		server = new ServerDialog(this, true, true, server[0], server [1]).showDialog();
+		server = new ServerDialog(this, true, true, server[0], server[1]).showDialog();
 	    }
 	    else
+	    {
 		server = new ServerDialog(this, true, false, null, null).showDialog();
-	
+	    }
+
 	    // Verify if the user cancelled
-	    if(server[0].equals("") || server[1].equals(""))
+	    if (server[0].equals("") || server[1].equals(""))
 	    {
 		break;
 	    }
-	    
+
 	    // Verify the input
-	    if(!serverListModel.contains(server[0]))
+	    if (!serverListModel.contains(server[0]))
 	    {
 		// Add it to the respective places
 		serverListModel.addElement(server[0]);
 		Preferences.getInstance().addServer(new Server(server[0], server[1]));
-		
+
 		// Set the added object to selected
 		jListServers.setSelectedIndex(serverListModel.size() - 1);
-		
+
 		// Set added server as selected and load its properties
 		jListServers.setSelectedIndex(serverListModel.indexOf(server[0]));
-		
+
 		success = true;
 	    }
 	    else // Restart if the input was wrong
@@ -1139,32 +1165,33 @@ public class PreferencesDialog extends javax.swing.JDialog
 		JOptionPane.showMessageDialog(this, "There is another server with the same name!");
 		success = false;
 	    }
-	}while(!success);
-	
+	}
+	while (!success);
+
     }//GEN-LAST:event_jButtonAddServerActionPerformed
 
     private void jButtonTemplateLogFileAddActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonTemplateLogFileAddActionPerformed
     {//GEN-HEADEREND:event_jButtonTemplateLogFileAddActionPerformed
 	String name = "New Log File";
-	
-	if(templateLogFilesListModel.contains(name))
+
+	if (templateLogFilesListModel.contains(name))
 	{
 	    int increment = 1;
-	    while(templateLogFilesListModel.contains(name + " " + increment))
+	    while (templateLogFilesListModel.contains(name + " " + increment))
+	    {
 		++increment;
+	    }
 	    templateLogFilesListModel.addElement(name += " " + increment);
 	}
 	else
+	{
 	    templateLogFilesListModel.addElement(name);
-	
+	}
+
 	// Select the new item and save in prefs
 	Preferences.getInstance().addLog(new Log(name));
 	jListTemplateLogFiles.setSelectedIndex(templateLogFilesListModel.size() - 1);
     }//GEN-LAST:event_jButtonTemplateLogFileAddActionPerformed
-
-    private void jTextFieldServerUsernameActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jTextFieldServerUsernameActionPerformed
-    {//GEN-HEADEREND:event_jTextFieldServerUsernameActionPerformed
-    }//GEN-LAST:event_jTextFieldServerUsernameActionPerformed
 
     private void jButtonCancelActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonCancelActionPerformed
     {//GEN-HEADEREND:event_jButtonCancelActionPerformed
@@ -1173,58 +1200,60 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void jButtonOKActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonOKActionPerformed
     {//GEN-HEADEREND:event_jButtonOKActionPerformed
-        // Save window location and size
+	// Save window location and size
 	Preferences.getInstance().setUIPreference(id, getBounds());
-	
+
 	// Save all the modifications
 	Preferences.getInstance().save();
-	
-        // Close pref window
-        dispose();
+
+	// Close pref window
+	dispose();
     }//GEN-LAST:event_jButtonOKActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt)//GEN-FIRST:event_formWindowClosing
     {//GEN-HEADEREND:event_formWindowClosing
-        // Cancel changes before saving window prefs
+	// Cancel changes before saving window prefs
 	Preferences.getInstance().cancel();
-	
+
 	Preferences.getInstance().setUIPreference(id, getBounds());
-	
+
 	Preferences.getInstance().save();
     }//GEN-LAST:event_formWindowClosing
 
     private void jButtonEditServerActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonEditServerActionPerformed
     {//GEN-HEADEREND:event_jButtonEditServerActionPerformed
-        // Find the ID of the server we want to edit
+	// Find the ID of the server we want to edit
 	Server serverToEdit = Preferences.getInstance().getServer((String) jListServers.getSelectedValue());
 	boolean success;
-	
+
 	// Keep the index if we need to put it back
 	int index = serverListModel.indexOf(serverToEdit.getName());
-	
+
 	do
 	{
 	    String[] server = new ServerDialog(this, true, true, serverToEdit.getName(), serverToEdit.getHostname()).showDialog();
 
 	    // Remove the server temporarily
 	    serverListModel.removeElement((String) jListServers.getSelectedValue());
-	    
+
 	    // If the user cancelled
-	    if(server[0].equals("") || server[1].equals(""))
+	    if (server[0].equals("") || server[1].equals(""))
 	    {
 		serverListModel.add(index, serverToEdit.getName());
 		break;
 	    }
-	    
+
 	    // Else we verify the input
-	    if(!serverListModel.contains(server[0]))
+	    if (!serverListModel.contains(server[0]))
 	    {
-		// Insert if correct
-		serverListModel.add(index, server[0]);
-		
 		// Apply the changes to the prefs
 		Preferences.getInstance().removeServer(serverToEdit.getName());
-		Preferences.getInstance().addServer(new Server(server[0], server[1], serverToEdit));
+		serverToEdit.setName(server[0]);
+		serverToEdit.setHostname(server[1]);
+		Preferences.getInstance().addServer(serverToEdit);
+
+		// Insert if correct
+		serverListModel.add(index, server[0]);
 		
 		success = true;
 	    }
@@ -1233,127 +1262,148 @@ public class PreferencesDialog extends javax.swing.JDialog
 		JOptionPane.showMessageDialog(this, "There is another server with the same name!");
 		success = false;
 	    }
-	}while(!success);
-	
+	}
+	while (!success);
+
 	// Reselect the server in the list no matter what
 	jListServers.setSelectedIndex(index);
     }//GEN-LAST:event_jButtonEditServerActionPerformed
 
     private void jButtonRemoveServerActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRemoveServerActionPerformed
     {//GEN-HEADEREND:event_jButtonRemoveServerActionPerformed
-        // Find the ID of the server we want to edit
+	// Find the ID of the server we want to edit
 	Server serverToEdit = Preferences.getInstance().getServer((String) jListServers.getSelectedValue());
-	
+
 	// Remove it from the list
 	int index = serverListModel.indexOf((String) jListServers.getSelectedValue());
 	serverListModel.removeElement((String) jListServers.getSelectedValue());
-	
+
 	// Remove it from the prefs
 	Preferences.getInstance().removeServer(serverToEdit.getName());
-	
+
 	// Change list selection to the previous element and load its properties
-	if(index != 0)
+	if (index != 0)
+	{
 	    --index;
-	
+	}
+
 	jListServers.setSelectedIndex(index);
-	
+
 	// Reload properties
 	loadServerProperties();
     }//GEN-LAST:event_jButtonRemoveServerActionPerformed
 
     private void jCheckBoxServerPropertiesEnabledActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jCheckBoxServerPropertiesEnabledActionPerformed
     {//GEN-HEADEREND:event_jCheckBoxServerPropertiesEnabledActionPerformed
-        if(jCheckBoxServerPropertiesEnabled.isSelected())
+	if (jCheckBoxServerPropertiesEnabled.isSelected())
+	{
 	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setEnabled(true);
+	}
 	else
+	{
 	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setEnabled(false);
-	
+	}
+
 	jListServers.repaint();
     }//GEN-LAST:event_jCheckBoxServerPropertiesEnabledActionPerformed
 
     private void jRadioButtonServerConnectionTelnetActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jRadioButtonServerConnectionTelnetActionPerformed
     {//GEN-HEADEREND:event_jRadioButtonServerConnectionTelnetActionPerformed
-	if(jRadioButtonServerConnectionTelnet.isSelected())
+	if (jRadioButtonServerConnectionTelnet.isSelected())
+	{
 	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setUseSSH(false);
+	}
 	else
+	{
 	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setUseSSH(true);
+	}
     }//GEN-LAST:event_jRadioButtonServerConnectionTelnetActionPerformed
 
     private void jRadioButtonServerConnectionSSHActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jRadioButtonServerConnectionSSHActionPerformed
     {//GEN-HEADEREND:event_jRadioButtonServerConnectionSSHActionPerformed
-        if(jRadioButtonServerConnectionSSH.isSelected())
+	if (jRadioButtonServerConnectionSSH.isSelected())
+	{
 	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setUseSSH(true);
+	}
 	else
+	{
 	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setUseSSH(false);
+	}
     }//GEN-LAST:event_jRadioButtonServerConnectionSSHActionPerformed
 
     private void jListServersValueChanged(javax.swing.event.ListSelectionEvent evt)//GEN-FIRST:event_jListServersValueChanged
     {//GEN-HEADEREND:event_jListServersValueChanged
-	if(jListServers.getSelectedValue() != null)
+	if (jListServers.getSelectedValue() != null)
+	{
 	    loadServerProperties();
+	}
     }//GEN-LAST:event_jListServersValueChanged
 
     private void jTextFieldServerUsernameFocusLost(java.awt.event.FocusEvent evt)//GEN-FIRST:event_jTextFieldServerUsernameFocusLost
     {//GEN-HEADEREND:event_jTextFieldServerUsernameFocusLost
-        Preferences.getInstance().setServerAccount(new PasswordAuthentication(jTextFieldServerUsername.getText(), jPasswordFieldServerPassword.getPassword()));
+	Preferences.getInstance().setServerAccount(new PasswordAuthentication(jTextFieldServerUsername.getText(), jPasswordFieldServerPassword.getPassword()));
     }//GEN-LAST:event_jTextFieldServerUsernameFocusLost
 
     private void jPasswordFieldServerPasswordFocusLost(java.awt.event.FocusEvent evt)//GEN-FIRST:event_jPasswordFieldServerPasswordFocusLost
     {//GEN-HEADEREND:event_jPasswordFieldServerPasswordFocusLost
-        Preferences.getInstance().setServerAccount(new PasswordAuthentication(jTextFieldServerUsername.getText(), jPasswordFieldServerPassword.getPassword()));
+	Preferences.getInstance().setServerAccount(new PasswordAuthentication(jTextFieldServerUsername.getText(), jPasswordFieldServerPassword.getPassword()));
     }//GEN-LAST:event_jPasswordFieldServerPasswordFocusLost
 
     private void jButtonTemplateLogFileRemoveActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonTemplateLogFileRemoveActionPerformed
     {//GEN-HEADEREND:event_jButtonTemplateLogFileRemoveActionPerformed
-        String name = (String) jListTemplateLogFiles.getSelectedValue();
-	
+	String name = (String) jListTemplateLogFiles.getSelectedValue();
+
 	// Remove this entry from all the servers, if they have it
-	for(int i = 0; i < serverListModel.size(); ++i)
+	for (int i = 0; i < serverListModel.size(); ++i)
 	{
 	    Preferences.getInstance().getServer((String) serverListModel.get(i)).removeLog(name);
 	}
-	
+
 	// Remove from the preferences and the list
 	int index = templateLogFilesListModel.indexOf(name);
 	templateLogFilesListModel.removeElement(name);
 	Preferences.getInstance().removeLog(name);
-	
+
 	// Select first element in the list
-	if(index != 0)
+	if (index != 0)
+	{
 	    --index;
-	
+	}
+
 	jListTemplateLogFiles.setSelectedIndex(index);
-	
+
 	// Reload properties in case there are no more elements
 	loadLogTemplateProperties();
     }//GEN-LAST:event_jButtonTemplateLogFileRemoveActionPerformed
 
     private void jListTemplateLogFilesValueChanged(javax.swing.event.ListSelectionEvent evt)//GEN-FIRST:event_jListTemplateLogFilesValueChanged
     {//GEN-HEADEREND:event_jListTemplateLogFilesValueChanged
-	if(jListTemplateLogFiles.getSelectedValue() != null)
+	if (jListTemplateLogFiles.getSelectedValue() != null)
+	{
 	    loadLogTemplateProperties();
+	}
     }//GEN-LAST:event_jListTemplateLogFilesValueChanged
 
     private void jTextFieldLogFileNameFocusLost(java.awt.event.FocusEvent evt)//GEN-FIRST:event_jTextFieldLogFileNameFocusLost
     {//GEN-HEADEREND:event_jTextFieldLogFileNameFocusLost
 	// Remove old value, but save the index for the new value
 	int index = jListTemplateLogFiles.getSelectedIndex();
-	
+
 	Log editedLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
-	
+
 	// Make sure there actually is a log selected
-	if(editedLog == null || index == -1 || jTextFieldLogFileName.getText().equals((String) jListLogFiles.getSelectedValue()))
+	if (editedLog == null || index == -1 || jTextFieldLogFileName.getText().equals((String) jListLogFiles.getSelectedValue()))
 	{
 	    return;
 	}
-	
-	if(jTextFieldLogFileName.getText().equals(""))
+
+	if (jTextFieldLogFileName.getText().equals(""))
 	{
 	    JOptionPane.showMessageDialog(this, "Name cannot be empty!");
 	    jTextFieldLogFileName.setText((String) jListTemplateLogFiles.getSelectedValue());
 	    return;
 	}
-	else if(jTextFieldLogFileName.getText().equals((String) jListTemplateLogFiles.getSelectedValue()))
+	else if (jTextFieldLogFileName.getText().equals((String) jListTemplateLogFiles.getSelectedValue()))
 	{
 	    // No change has been done, so we just disregard this event
 	    return;
@@ -1364,143 +1414,158 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jTextFieldLogFileName.setText((String) jListTemplateLogFiles.getSelectedValue());
 	    return;
 	}
-	
+
 	Preferences.getInstance().removeLog((String) jListTemplateLogFiles.getSelectedValue());
-	
+
 	// Modify the value
 	editedLog.setName(jTextFieldLogFileName.getText());
-	
+
 	// Insert into list and prefs
 	Preferences.getInstance().addLog(editedLog);
 	templateLogFilesListModel.set(index, editedLog.getName());
-	
+
 	// Select it
 	jListTemplateLogFiles.setSelectedIndex(index);
     }//GEN-LAST:event_jTextFieldLogFileNameFocusLost
 
     private void jTextFieldLogFilePrefixFocusLost(java.awt.event.FocusEvent evt)//GEN-FIRST:event_jTextFieldLogFilePrefixFocusLost
     {//GEN-HEADEREND:event_jTextFieldLogFilePrefixFocusLost
-        int index = jListTemplateLogFiles.getSelectedIndex();
-	
+	int index = jListTemplateLogFiles.getSelectedIndex();
+
 	Log logToEdit = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
-	
+
 	// Make sure there actually is a log selected
-	if(index == -1 || logToEdit == null)
+	if (index == -1 || logToEdit == null)
 	{
 	    return;
 	}
-	
+
 	logToEdit.setNamePrefix(jTextFieldLogFilePrefix.getText());
     }//GEN-LAST:event_jTextFieldLogFilePrefixFocusLost
 
     private void jTextFieldLogFilePathFocusLost(java.awt.event.FocusEvent evt)//GEN-FIRST:event_jTextFieldLogFilePathFocusLost
     {//GEN-HEADEREND:event_jTextFieldLogFilePathFocusLost
-        int index = jListTemplateLogFiles.getSelectedIndex();
-	
+	int index = jListTemplateLogFiles.getSelectedIndex();
+
 	Log logToEdit = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
-	
+
 	// Make sure there actually is a log selected
-	if(index == -1 || logToEdit == null)
+	if (index == -1 || logToEdit == null)
 	{
 	    return;
 	}
-	
+
 	logToEdit.setFilePath(jTextFieldLogFilePath.getText());
     }//GEN-LAST:event_jTextFieldLogFilePathFocusLost
 
     private void jButtonLogFileFilterAddActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonLogFileFilterAddActionPerformed
     {//GEN-HEADEREND:event_jButtonLogFileFilterAddActionPerformed
         // Create a new Filter
-	
+
 	String name = "New Filter";
-	
-	if(logFileFilterModel.contains(name))
+
+	if (logFileFilterModel.contains(name))
 	{
 	    int increment = 1;
-	    while(logFileFilterModel.contains(name + " " + increment))
+	    while (logFileFilterModel.contains(name + " " + increment))
+	    {
 		++increment;
+	    }
 	    logFileFilterModel.addElement(name += " " + increment);
 	}
 	else
+	{
 	    logFileFilterModel.addElement(name);
-	
+	}
+
 	// Add the filter to the log template
 	Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue()).addFilter(new Filter(name));
-	
+
 	// Select the filter (properties update will be done automagically)
 	jListLogFileFilters.setSelectedIndex(logFileFilterModel.size() - 1);
     }//GEN-LAST:event_jButtonLogFileFilterAddActionPerformed
 
     private void jListLogFileFiltersValueChanged(javax.swing.event.ListSelectionEvent evt)//GEN-FIRST:event_jListLogFileFiltersValueChanged
     {//GEN-HEADEREND:event_jListLogFileFiltersValueChanged
-	if(jListLogFileFilters.getSelectedValue() != null)
+	if (jListLogFileFilters.getSelectedValue() != null)
+	{
 	    loadLogFileFiltersProperties();
+	}
     }//GEN-LAST:event_jListLogFileFiltersValueChanged
 
     private void jButtonLogFileFilterRemoveActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonLogFileFilterRemoveActionPerformed
     {//GEN-HEADEREND:event_jButtonLogFileFilterRemoveActionPerformed
-        // Find the log that owns this filter
-	Log log = Preferences.getInstance().getLog((String)jListTemplateLogFiles.getSelectedValue());
-	
+	// Find the log that owns this filter
+	Log log = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
+
 	// Remove the filter from that log and the list
 	int index = logFileFilterModel.indexOf((String) jListLogFileFilters.getSelectedValue());
 	log.removeFilter((String) jListLogFileFilters.getSelectedValue());
 	logFileFilterModel.removeElement((String) jListLogFileFilters.getSelectedValue());
-	
+
 	// Update selection in the list
-	if(index != 0)
+	if (index != 0)
+	{
 	    --index;
+	}
 	jListLogFileFilters.setSelectedIndex(index);
-	
+
 	// Reload properties in case list is empty (then it won't update)
 	loadLogFileFiltersProperties();
     }//GEN-LAST:event_jButtonLogFileFilterRemoveActionPerformed
 
     private void jButtonAddLogFileActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonAddLogFileActionPerformed
     {//GEN-HEADEREND:event_jButtonAddLogFileActionPerformed
-        // Let the user select the right log
-	String selectedLog = new LogFileChooser(this, true, templateLogFilesListModel, serverLogFilesListModel).showDialog();
-	
-	// Verify if the user cancelled
-	if(selectedLog.equals(""))
-	    return;
-	
-	// Add it to the server
-	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).addLog(selectedLog);
-	
-	serverLogFilesListModel.addElement(selectedLog);
-	jListLogFiles.setSelectedIndex(serverLogFilesListModel.indexOf(selectedLog));
+	// Let the user select the right log
+	ArrayList<String> selectedLogs = new LogFileChooser(this, true, templateLogFilesListModel, serverLogFilesListModel).showDialog();
+
+	for (String logName : selectedLogs)
+	{
+	    // Verify if the user cancelled
+	    if (logName.equals(""))
+	    {
+		return;
+	    }
+
+	    // Add it to the server
+	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).addLog(logName);
+
+	    serverLogFilesListModel.addElement(logName);
+	    jListLogFiles.setSelectedIndex(serverLogFilesListModel.indexOf(logName));
+	}
     }//GEN-LAST:event_jButtonAddLogFileActionPerformed
 
     private void jListLogFilesValueChanged(javax.swing.event.ListSelectionEvent evt)//GEN-FIRST:event_jListLogFilesValueChanged
     {//GEN-HEADEREND:event_jListLogFilesValueChanged
-        loadServerLogProperties();
+	loadServerLogProperties();
     }//GEN-LAST:event_jListLogFilesValueChanged
 
     private void jButtonRemoveLogFileActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRemoveLogFileActionPerformed
     {//GEN-HEADEREND:event_jButtonRemoveLogFileActionPerformed
-        // Remove it from the respective server
+	// Remove it from the respective server
 	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).removeLog((String) jListLogFiles.getSelectedValue());
-	
+
 	// Remove it from the current list
 	int index = serverLogFilesListModel.indexOf((String) jListLogFiles.getSelectedValue());
 	serverLogFilesListModel.removeElement((String) jListLogFiles.getSelectedValue());
-	
+
 	// Select first object
-	if(index != 0)
+	if (index != 0)
+	{
 	    --index;
-	
+	}
+
 	jListLogFiles.setSelectedIndex(index);
-	
+
 	// Reload properties in case there are no other objects
 	loadServerLogProperties();
     }//GEN-LAST:event_jButtonRemoveLogFileActionPerformed
 
     private void jTabbedPaneRootStateChanged(javax.swing.event.ChangeEvent evt)//GEN-FIRST:event_jTabbedPaneRootStateChanged
     {//GEN-HEADEREND:event_jTabbedPaneRootStateChanged
-        JTabbedPane source = (JTabbedPane) evt.getSource();
-	
-	switch(source.getSelectedIndex())
+	JTabbedPane source = (JTabbedPane) evt.getSource();
+
+	switch (source.getSelectedIndex())
 	{
 	    case 0:
 		loadServerProperties();
@@ -1522,8 +1587,8 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void jCheckBoxLogFileFilterEnabledActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jCheckBoxLogFileFilterEnabledActionPerformed
     {//GEN-HEADEREND:event_jCheckBoxLogFileFilterEnabledActionPerformed
-        String filterName = (String) jListLogFileFilters.getSelectedValue();
-	String logName = (String)jListTemplateLogFiles.getSelectedValue();
+	String filterName = (String) jListLogFileFilters.getSelectedValue();
+	String logName = (String) jListTemplateLogFiles.getSelectedValue();
 	Preferences.getInstance().getLog(logName).getFilter(filterName).setEnabled(jCheckBoxLogFileFilterEnabled.isSelected());
 
 	// Repaint the list to update BOLD display
@@ -1535,18 +1600,18 @@ public class PreferencesDialog extends javax.swing.JDialog
 	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
 	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
 
-	if(jTextFieldLogFileFilterName.getText().equals(""))
+	if (jTextFieldLogFileFilterName.getText().equals(""))
 	{
 	    JOptionPane.showMessageDialog(this, "The name cannot be empty!");
 	    jTextFieldLogFileFilterName.setText((String) jListLogFileFilters.getSelectedValue());
 	    return;
 	}
-	else if(jTextFieldLogFileFilterName.getText().equals((String) jListLogFileFilters.getSelectedValue()))
+	else if (jTextFieldLogFileFilterName.getText().equals((String) jListLogFileFilters.getSelectedValue()))
 	{
 	    // No change has been done, so we just disregard this event
 	    return;
 	}
-	else if(logFileFilterModel.contains(jTextFieldLogFileFilterName.getText()))
+	else if (logFileFilterModel.contains(jTextFieldLogFileFilterName.getText()))
 	{
 	    JOptionPane.showMessageDialog(this, "There is another entry with the same name!");
 	    jTextFieldLogFileFilterName.setText((String) jListLogFileFilters.getSelectedValue());
@@ -1575,23 +1640,27 @@ public class PreferencesDialog extends javax.swing.JDialog
     private void jSpinnerLogFileFilterPrePrintStateChanged(javax.swing.event.ChangeEvent evt)//GEN-FIRST:event_jSpinnerLogFileFilterPrePrintStateChanged
     {//GEN-HEADEREND:event_jSpinnerLogFileFilterPrePrintStateChanged
 	if (jListLogFileFilters.getSelectedValue() == null)
+	{
 	    return;
+	}
 
 	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
 	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
-	
-	currentFilter.setLinesAfter((int)jSpinnerLogFileFilterPrePrint.getValue());
+
+	currentFilter.setLinesBefore((int) jSpinnerLogFileFilterPrePrint.getValue());
     }//GEN-LAST:event_jSpinnerLogFileFilterPrePrintStateChanged
 
     private void jSpinnerLogFileFilterPostPrintStateChanged(javax.swing.event.ChangeEvent evt)//GEN-FIRST:event_jSpinnerLogFileFilterPostPrintStateChanged
     {//GEN-HEADEREND:event_jSpinnerLogFileFilterPostPrintStateChanged
-	if(jListLogFileFilters.getSelectedValue() == null)
+	if (jListLogFileFilters.getSelectedValue() == null)
+	{
 	    return;
+	}
 
 	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
 	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
 
-	currentFilter.setLinesAfter((int)jSpinnerLogFileFilterPostPrint.getValue());
+	currentFilter.setLinesAfter((int) jSpinnerLogFileFilterPostPrint.getValue());
     }//GEN-LAST:event_jSpinnerLogFileFilterPostPrintStateChanged
 
     class ServerCellRenderer extends DefaultListCellRenderer
@@ -1601,7 +1670,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	{
 	    Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-	    if ((Preferences.getInstance().getServer((String) value)).isEnabled())
+	    if (!serverListModel.isEmpty() && (Preferences.getInstance().getServer((String) value)).isEnabled())
 	    {
 		c.setFont(c.getFont().deriveFont(Font.BOLD));
 	    }
@@ -1612,7 +1681,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    return c;
 	}
     }
-    
+
     class LogFileFilterCellRenderer extends DefaultListCellRenderer
     {
 	@Override
@@ -1631,7 +1700,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    return c;
 	}
     }
-    
+
     // <editor-fold defaultstate="collapsed" desc="Generated Variables">
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroupServerProperties;
@@ -1699,7 +1768,7 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JTextField jTextFieldServerUsername;
     // End of variables declaration//GEN-END:variables
     // </editor-fold>
-    
+
     private static final int id = 1;
     private DefaultListModel templateLogFilesListModel;
     private DefaultListModel serverListModel;

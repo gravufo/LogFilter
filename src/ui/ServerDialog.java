@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package ui;
 
 import java.awt.event.ActionEvent;
@@ -14,6 +9,7 @@ import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
 /**
+ * This class represents the Add/Edit Server dialog and its logic
  *
  * @author cartin
  */
@@ -21,11 +17,11 @@ public class ServerDialog extends javax.swing.JDialog
 {
 
     /**
-     * Creates new form NewJDialog
+     * Creates new Add/Edit Server dialog
      *
-     * @param parent Parent component
-     * @param modal  Modality of this dialog
-     * @param isEdit True if this is a server edit, false otherwise
+     * @param parent   Parent component
+     * @param modal    Modality of this dialog
+     * @param isEdit   True if this is a server edit, false otherwise
      * @param name     The name of the server to edit, if isEdit is true
      * @param hostname The hostname of the server to edit, if isEdit is true
      */
@@ -76,28 +72,6 @@ public class ServerDialog extends javax.swing.JDialog
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("New Server");
-        addWindowListener(new java.awt.event.WindowAdapter()
-        {
-            public void windowClosing(java.awt.event.WindowEvent evt)
-            {
-                formWindowClosing(evt);
-            }
-        });
-        addKeyListener(new java.awt.event.KeyAdapter()
-        {
-            public void keyReleased(java.awt.event.KeyEvent evt)
-            {
-                formKeyReleased(evt);
-            }
-        });
-
-        jPanelRoot.addKeyListener(new java.awt.event.KeyAdapter()
-        {
-            public void keyReleased(java.awt.event.KeyEvent evt)
-            {
-                jPanelRootKeyReleased(evt);
-            }
-        });
 
         jLabelHostname.setText("Hostname or IP address:");
         jLabelHostname.setFocusable(false);
@@ -107,14 +81,6 @@ public class ServerDialog extends javax.swing.JDialog
             public void keyPressed(java.awt.event.KeyEvent evt)
             {
                 jTextFieldHostnameKeyPressed(evt);
-            }
-            public void keyReleased(java.awt.event.KeyEvent evt)
-            {
-                jTextFieldHostnameKeyReleased(evt);
-            }
-            public void keyTyped(java.awt.event.KeyEvent evt)
-            {
-                jTextFieldHostnameKeyTyped(evt);
             }
         });
 
@@ -138,19 +104,12 @@ public class ServerDialog extends javax.swing.JDialog
 
         jLabelServerName.setText("Server name:");
 
+        jTextFieldServerName.requestFocus();
         jTextFieldServerName.addKeyListener(new java.awt.event.KeyAdapter()
         {
             public void keyPressed(java.awt.event.KeyEvent evt)
             {
                 jTextFieldServerNameKeyPressed(evt);
-            }
-            public void keyReleased(java.awt.event.KeyEvent evt)
-            {
-                jTextFieldServerNameKeyReleased(evt);
-            }
-            public void keyTyped(java.awt.event.KeyEvent evt)
-            {
-                jTextFieldServerNameKeyTyped(evt);
             }
         });
 
@@ -218,37 +177,9 @@ public class ServerDialog extends javax.swing.JDialog
 	cancel();
     }//GEN-LAST:event_jButtonCancelActionPerformed
 
-    private void formWindowClosing(java.awt.event.WindowEvent evt)//GEN-FIRST:event_formWindowClosing
-    {//GEN-HEADEREND:event_formWindowClosing
-    }//GEN-LAST:event_formWindowClosing
-
-    private void jTextFieldHostnameKeyTyped(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextFieldHostnameKeyTyped
-    {//GEN-HEADEREND:event_jTextFieldHostnameKeyTyped
-    }//GEN-LAST:event_jTextFieldHostnameKeyTyped
-
-    private void jTextFieldServerNameKeyTyped(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextFieldServerNameKeyTyped
-    {//GEN-HEADEREND:event_jTextFieldServerNameKeyTyped
-    }//GEN-LAST:event_jTextFieldServerNameKeyTyped
-
-    private void jTextFieldServerNameKeyReleased(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextFieldServerNameKeyReleased
-    {//GEN-HEADEREND:event_jTextFieldServerNameKeyReleased
-    }//GEN-LAST:event_jTextFieldServerNameKeyReleased
-
-    private void jTextFieldHostnameKeyReleased(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextFieldHostnameKeyReleased
-    {//GEN-HEADEREND:event_jTextFieldHostnameKeyReleased
-    }//GEN-LAST:event_jTextFieldHostnameKeyReleased
-
-    private void jPanelRootKeyReleased(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jPanelRootKeyReleased
-    {//GEN-HEADEREND:event_jPanelRootKeyReleased
-    }//GEN-LAST:event_jPanelRootKeyReleased
-
-    private void formKeyReleased(java.awt.event.KeyEvent evt)//GEN-FIRST:event_formKeyReleased
-    {//GEN-HEADEREND:event_formKeyReleased
-    }//GEN-LAST:event_formKeyReleased
-
     private void jTextFieldServerNameKeyPressed(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextFieldServerNameKeyPressed
     {//GEN-HEADEREND:event_jTextFieldServerNameKeyPressed
-        if (evt.getKeyCode() == KeyEvent.VK_ENTER)
+	if (evt.getKeyCode() == KeyEvent.VK_ENTER)
 	{
 	    verifyInput();
 	}
@@ -256,7 +187,7 @@ public class ServerDialog extends javax.swing.JDialog
 
     private void jTextFieldHostnameKeyPressed(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextFieldHostnameKeyPressed
     {//GEN-HEADEREND:event_jTextFieldHostnameKeyPressed
-        if (evt.getKeyCode() == KeyEvent.VK_ENTER)
+	if (evt.getKeyCode() == KeyEvent.VK_ENTER)
 	{
 	    verifyInput();
 	}

@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package logfilter;
 
 import java.io.Serializable;
@@ -11,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * This class represents a log file monitoring profile
  *
  * @author cartin
  */
@@ -20,6 +15,15 @@ public class Log implements Serializable
     {
 	this.name = name;
 	filterMap = new HashMap<>();
+
+	// Create a new default exceptions filter for any new log file
+	Filter exceptionFilter = new Filter("Exceptions");
+	exceptionFilter.setEnabled(true);
+	exceptionFilter.setKeyword("exception");
+	exceptionFilter.setLinesAfter(10);
+	exceptionFilter.setLinesBefore(10);
+	filterMap.put(exceptionFilter.getName(), exceptionFilter);
+
 	filePath = "";
 	namePrefix = "";
     }
@@ -81,9 +85,25 @@ public class Log implements Serializable
     {
 	return filterMap.remove(name) != null;
     }
-    
+
+    /**
+     * This map contains the Filters that should be applied to this log
+     */
     private Map<String, Filter> filterMap;
+
+    /**
+     * Contains the full path <u>with the trailing slash</u> to the log file on
+     * the server.
+     */
     private String filePath;
+
+    /**
+     * Contains the prefix of the log file name. E.g.: XSLog for XSLog-DATE-.log
+     */
     private String namePrefix;
+
+    /**
+     * Contains the name of the log file profile
+     */
     private String name;
 }

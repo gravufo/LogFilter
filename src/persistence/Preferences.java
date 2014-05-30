@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package persistence;
 
 import java.awt.Rectangle;
@@ -21,11 +15,20 @@ import logfilter.Log;
 import logfilter.Server;
 
 /**
+ * This class manages the preferences (UI, servers, log templates, filters,
+ * etc.) of the program and can provide persistence and cancel functionality.
+ *
+ * Serialization is used as the persistence method for now. Java properties file
+ * is not suitable, because of the complex structures we have (Maps)
  *
  * @author cartin
  */
 public class Preferences implements Serializable
 {
+    /**
+     * Main constructor. Should only be called once, because this class is a
+     * Singleton.
+     */
     private Preferences()
     {
 	serverMap = new HashMap<>();
@@ -33,9 +36,39 @@ public class Preferences implements Serializable
 	uIPreferences = new HashMap<>();
 	
 	serverUsername = "bwadmin";
-	serverPassword = new char[]{'b', 'w', 'a', 'd', 'm', 'i', 'n'};
+	serverPassword = new char[]
+	{
+	    'b', 'w', 'a', 'd', 'm', 'i', 'n'
+	};
+
+	// Create new default log templates
+	Log defaultLog = new Log("xtail");
+	defaultLog.setFilePath("/var/broadworks/logs/appserver/");
+	defaultLog.setNamePrefix("XSLog");
+	logMap.put("xtail", defaultLog);
+
+	defaultLog = new Log("xotail");
+	defaultLog.setFilePath("/var/broadworks/logs/appserver/");
+	defaultLog.setNamePrefix("XSOutput");
+	logMap.put("xotail", defaultLog);
+
+	defaultLog = new Log("ptail");
+	defaultLog.setFilePath("/var/broadworks/logs/appserver/");
+	defaultLog.setNamePrefix("PSLog");
+	logMap.put("ptail", defaultLog);
+
+	defaultLog = new Log("potail");
+	defaultLog.setFilePath("/var/broadworks/logs/appserver/");
+	defaultLog.setNamePrefix("PSOutput");
+	logMap.put("potail", defaultLog);
+
     }
-    
+
+    /**
+     * Copy constructor
+     *
+     * @param preferences The instance to copy
+     */
     private Preferences(Preferences preferences)
     {
 	uIPreferences = new HashMap<>(preferences.uIPreferences);
@@ -45,11 +78,17 @@ public class Preferences implements Serializable
 	serverUsername = preferences.serverUsername;
 	serverPassword = preferences.serverPassword;
     }
-    
+
+    /**
+     * Singleton access function
+     *
+     * @return The single instance of this class
+     */
     public static Preferences getInstance()
     {
 	if(instance == null)
 	{
+	    // Try to load pref file
 	    load();
 	    
 	    if(instance == null) // If the loading failed
@@ -63,16 +102,21 @@ public class Preferences implements Serializable
 	
 	return instance;
     }
-    
+
+    /**
+     * This function will immediately serialize a copy of the instance of this
+     * class into the preference file for persistence.
+     */
     public void save()
     {
 	try
 	{
 	    FileOutputStream fos = new FileOutputStream(fileName);
 
+	    // TODO: Save every modification we did to the right instance
 	    try (ObjectOutputStream oos = new ObjectOutputStream(fos))
 	    {
-		// Save every modification we did to the right instance
+		// TODO: Save every modification we did to the right instance
 		savedInstance = new Preferences(instance);
 		
 		// Écrit toute l'instance (incluant ses attributs publics/privés)
@@ -83,13 +127,22 @@ public class Preferences implements Serializable
 	{
 	}
     }
-    
+
+    /**
+     * This function will completely cancel any change that was made since the
+     * last call to save()
+     */
     public void cancel()
     {
-	// Reset every modification we did by copying the saved instance
+	// Create a new instance from the saved copy
+	// Last one will be destroyed by the garbage collector
 	instance = new Preferences(savedInstance);
     }
-    
+
+    /**
+     * This function will attempt to load a serialized instance of this class
+     * from the preference file (if it exists)
+     */
     private static void load()
     {
 	try
@@ -106,14 +159,19 @@ public class Preferences implements Serializable
 	}
     }
 
-    public ArrayList<String> getEnabledServers()
+    /**
+     * This function looks for all the enabled servers in the servers list
+     *
+     * @return An ArrayList of enabled servers
+     */
+    public ArrayList<Server> getEnabledServers()
     {
-	ArrayList<String> enabledServers = new ArrayList<>();
+	ArrayList<Server> enabledServers = new ArrayList<>();
 	
 	for(Server s : serverMap.values())
 	{
-	    if (s.isEnabled())
-		enabledServers.add(s.getName());
+	    if (s.isEnabled() && !s.getLogList().isEmpty())
+		enabledServers.add(s);
 	}
 	
 	return enabledServers;
@@ -179,11 +237,20 @@ public class Preferences implements Serializable
     {
 	return instance.logMap;
     }
-    
+
+    /**
+     * Active instance of this class
+     */
     private static Preferences instance = null;
-    
+
+    /**
+     * Latest saved instance (i.e. a copy of the version on disk)
+     */
     private static Preferences savedInstance;
-    
+
+    /**
+     * Name of the preference file
+     */
     private static String fileName = "preferences.ser";
     
     // Preferences
@@ -204,7 +271,7 @@ public class Preferences implements Serializable
     private String serverUsername;
     
     /**
-     * Server password
+     * Server password. Using char[] for security reasons.
      */
     private char[] serverPassword;
     

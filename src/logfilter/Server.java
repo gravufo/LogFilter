@@ -1,15 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package logfilter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
+ * This class represents a server profile
  *
  * @author cartin
  */
@@ -41,6 +36,16 @@ public class Server implements Serializable
     public String getName()
     {
 	return name;
+    }
+
+    public void setHostname(String hostname)
+    {
+	this.hostname = hostname;
+    }
+
+    public void setName(String name)
+    {
+	this.name = name;
     }
 
     public void setEnabled(boolean enabled)
@@ -77,10 +82,32 @@ public class Server implements Serializable
     {
 	return logList;
     }
-    
+
+    /**
+     * Contains the name of the log templates that are associated with this
+     * server.
+     */
     private ArrayList<String> logList;
+
+    /**
+     * Contains the information whether the server should be monitored (true) or
+     * not (false).
+     */
     private boolean enabled;
+
+    /**
+     * Determines if we should use SSH (true) or Telnet (false) for the
+     * connection.
+     */
     private boolean useSSH;
-    private final String hostname;
-    private final String name;
+
+    /**
+     * Contains the hostname or IP address to which we should connect.
+     */
+    private String hostname;
+
+    /**
+     * Contains the name of the profile.
+     */
+    private String name;
 }

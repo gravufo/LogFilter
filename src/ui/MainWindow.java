@@ -1,18 +1,20 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package ui;
 
+import connection.ConnectionManager;
+import connection.RemoteConsumerManager;
 import java.awt.Rectangle;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import javax.swing.BoundedRangeModel;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import logfilter.Server;
 import persistence.Preferences;
 
 /**
+ * This is the main window of the program
  *
  * @author cartin
  */
@@ -33,9 +35,103 @@ public class MainWindow extends JFrame
 	    setBounds(r);
 	}
 
+	// Disable the auto scroll EDIT: Don't, we want to be able to write correctly.
+//	((DefaultCaret) jTextAreaOutput.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+
+	// Set the listener for the scrollpane to enhance auto-scroll functionality
+	jScrollPaneOutputText.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener()
+	{
+	    private int _val = 0;
+	    private int _ext = 0;
+	    private int _max = 0;
+
+	    private final BoundedRangeModel _model = jScrollPaneOutputText.getVerticalScrollBar().getModel();
+
+	    @Override
+	    public void adjustmentValueChanged(AdjustmentEvent e)
+	    {
+
+		// Get the new max :
+		int newMax = _model.getMaximum();
+
+		// If the new max has changed and if we were scrolled to bottom :
+		if (newMax != _max && (_val + _ext == _max))
+		{
+
+		    // Scroll to bottom :
+		    _model.setValue(_model.getMaximum() - _model.getExtent());
+		}
+
+		// Save the new values :
+		_val = _model.getValue();
+		_ext = _model.getExtent();
+		_max = _model.getMaximum();
+	    }
+	});
+
 	// Remove Java icon in title bar and place a crappy looking custom one
-	ImageIcon img = new ImageIcon("images/Log_icon.png");
+	ImageIcon img = new ImageIcon(getClass().getResource("/images/Log_icon.png"));
 	setIconImage(img.getImage());
+
+	// Set the console to output on
+	RemoteConsumerManager.getInstance().setConsole(jTextAreaOutput);
+
+	// Initialise the connection manager
+	connectionManager = ConnectionManager.getInstance();
+
+	// Load current properties (server enabled, etc.)
+	loadProperties();
+    }
+
+    private void loadProperties()
+    {
+	serverList = new ArrayList<>(Preferences.getInstance().getEnabledServers());
+
+	// TODO: Do a delta instead for better performance and user friendliness
+	new Thread()
+	{
+	    @Override
+	    public void run()
+	    {
+		connectionManager.removeConnections();
+		connectionManager.addConnections(serverList, Preferences.getInstance().getServerAccount());
+	    }
+	}.start();
+
+	if (serverList.isEmpty())
+	{
+	    jTextFieldServersToMonitor.setText("No servers enabled");
+	    jButtonConnect.setEnabled(false);
+	    jButtonRefresh.setEnabled(false);
+	}
+	else
+	{
+	    String serversToDisplay = "";
+
+	    for (int i = 0; i < serverList.size(); ++i)
+	    {
+		if (i > 0)
+		{
+		    serversToDisplay += ", ";
+		}
+
+		serversToDisplay += serverList.get(i).getName();
+	    }
+
+	    jTextFieldServersToMonitor.setText(serversToDisplay);
+
+	    jButtonConnect.setEnabled(true);
+	    jButtonRefresh.setEnabled(true);
+	}
+    }
+
+    private void terminationCleanup()
+    {
+	// No need to cancel, since no prefs have been modified if we're here
+	// For consistency, we save window location and size
+	Preferences.getInstance().setUIPreference(id, getBounds());
+	Preferences.getInstance().save();
+
     }
 
     /**
@@ -107,9 +203,10 @@ public class MainWindow extends JFrame
         jLabelServersToMonitor.setFocusable(false);
 
         jTextFieldServersToMonitor.setEditable(false);
+        jTextFieldServersToMonitor.setToolTipText("Displays the server profiles that will be connected when you press connect");
         jTextFieldServersToMonitor.setFocusable(false);
 
-        jButtonRefresh.setIcon(new javax.swing.ImageIcon("C:\\Users\\cartin\\Documents\\NetBeansProjects\\LogFilter\\images\\01-refresh-icon.png")); // NOI18N
+        jButtonRefresh.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/refresh-icon.png"))); // NOI18N
 
         javax.swing.GroupLayout jPanelRootLayout = new javax.swing.GroupLayout(jPanelRoot);
         jPanelRoot.setLayout(jPanelRootLayout);
@@ -133,14 +230,14 @@ public class MainWindow extends JFrame
             jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelRootLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButtonRefresh, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jButtonConnect)
                         .addComponent(jLabelServersToMonitor)
-                        .addComponent(jTextFieldServersToMonitor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPaneOutputText, javax.swing.GroupLayout.DEFAULT_SIZE, 421, Short.MAX_VALUE)
+                        .addComponent(jTextFieldServersToMonitor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButtonRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPaneOutputText, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -202,26 +299,17 @@ public class MainWindow extends JFrame
 
     private void jMenuItemExitActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemExitActionPerformed
     {//GEN-HEADEREND:event_jMenuItemExitActionPerformed
-        // No need to cancel, since no prefs have been modified if we're here
-	// For consistency, we save window location and size
-	Preferences.getInstance().setUIPreference(id, getBounds());
-	Preferences.getInstance().save();
-	
+	// Clean up
+	terminationCleanup();
+
+	// Close the window
 	dispose();
     }//GEN-LAST:event_jMenuItemExitActionPerformed
 
     private void jMenuItemPreferencesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemPreferencesActionPerformed
     {//GEN-HEADEREND:event_jMenuItemPreferencesActionPerformed
-        // TODO add your handling code here:
-	java.awt.EventQueue.invokeLater(new Runnable()
-        {
-	    @Override
-            public void run()
-            {
-                new PreferencesDialog(MainWindow.this, true).setVisible(true);
-            }
-        });
-	
+        new PreferencesDialog(MainWindow.this, true).showDialog();
+	loadProperties();
 //	new Thread()
 //	{
 //	    @Override
@@ -234,19 +322,22 @@ public class MainWindow extends JFrame
 
     private void formWindowClosing(java.awt.event.WindowEvent evt)//GEN-FIRST:event_formWindowClosing
     {//GEN-HEADEREND:event_formWindowClosing
-        // No need to cancel, since no prefs have been modified if we're here
-	// For consistency, we save window location and size
-	Preferences.getInstance().setUIPreference(id, getBounds());
-	Preferences.getInstance().save();
+	terminationCleanup();
     }//GEN-LAST:event_formWindowClosing
 
     private void jButtonConnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonConnectActionPerformed
     {//GEN-HEADEREND:event_jButtonConnectActionPerformed
-        jButtonConnect.setEnabled(false);
+	jButtonConnect.setEnabled(false);
 
-	// Plan: 
-	// TODO: ON A DIFFERENT THREAD! EDIT: nvm ConnectionThread will extend Thread, thus running on a different thread
-	// new ConnectionThread(hostname, username, password).start()
+	new Thread()
+	{
+	    @Override
+	    public void run()
+	    {
+		connectionManager.startConnections();
+		connectionManager.executeCommands();
+	    }
+	}.start();
     }//GEN-LAST:event_jButtonConnectActionPerformed
 
     private void jTextAreaOutputKeyTyped(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextAreaOutputKeyTyped
@@ -272,4 +363,6 @@ public class MainWindow extends JFrame
     // End of variables declaration//GEN-END:variables
 
     private final int id = 0;
+    private ArrayList<Server> serverList;
+    private ConnectionManager connectionManager;
 }

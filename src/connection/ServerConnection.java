@@ -1,96 +1,41 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package connection;
 
-import ch.ethz.ssh2.Connection;
-import ch.ethz.ssh2.Session;
-import java.io.IOException;
 import java.net.PasswordAuthentication;
-import javax.swing.JOptionPane;
-import ui.MainWindow;
 
 /**
+ * This class represents a SSH connection using a single session
  *
  * @author cartin
  */
-public class ServerConnection extends Thread
+public abstract class ServerConnection
 {
-    String hostname;
-    PasswordAuthentication account;
-    Connection connection;
+    protected String hostname;
+    protected PasswordAuthentication account;
+    protected boolean isConnected;
+    protected boolean isSessionActive;
+    protected Session session;
 
     public ServerConnection(String hostname, PasswordAuthentication account)
     {
 	this.hostname = hostname;
 	this.account = account;
+	isConnected = false;
+	isSessionActive = false;
     }
 
-    @Override
-    public void run()
-    {
-	connection = new Connection(hostname);
+    /**
+     * Initiates the connection to the server
+     *
+     * @return true if connection is successful, false otherwise
+     */
+    public abstract boolean connect();
 
-	try
-	{
-	    /*
-	     *
-	     * CONNECT
-	     *
-	     */
-	    connection.connect();
+    public abstract Session getSession();
 
-	    /*
-	     *
-	     * AUTHENTICATION PHASE
-	     *
-	     */
+    public abstract void closeSession();
 
-	    boolean res = connection.authenticateWithPassword(account.getUserName(), new String(account.getPassword()));
-
-	    if (res == false)
-	    {
-		System.out.println("The username or password is incorrect");
-	    }
-
-	    /*
-	     *
-	     * AUTHENTICATION OK. DO SOMETHING.
-	     *
-	     */
-	    Session session = connection.openSession();
-
-	    // TODO: Verify if we really need this or not!
-//	    int x_width = 90;
-//	    int y_width = 30;
-//
-//	    sess.requestPTY("dumb", x_width, y_width, 0, 0, null);
-	    // Start the shell on the remote host
-	    session.startShell();
-
-	    //TerminalDialog td = new TerminalDialog(MainWindow.getFrames()[0], username + "@" + hostname, sess, x_width, y_width);
-	    
-	    JOptionPane.showMessageDialog(MainWindow.getFrames()[0], "Exception: ");
-	    
-	    /*
-	     * The following call blocks until the dialog has been closed
-	     */
-	    //td.setVisible(true);
-
-	}
-	catch (IOException e)
-	{
-	    JOptionPane.showMessageDialog(MainWindow.getFrames()[0], "Exception: " + e.getMessage());
-	}
-    }
-    
-    public void closeConnection()
-    {
-	/*
-	 * CLOSE THE CONNECTION.
-	 */
-	connection.close();
-    }
+    /**
+     * Closes an active connection. Does nothing if the connection is inactive.
+     */
+    public abstract void closeConnection();
 }
