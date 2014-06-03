@@ -1,8 +1,10 @@
 package connection;
 
+import ch.ethz.ssh2.StreamGobbler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JTextArea;
@@ -21,7 +23,7 @@ public class RemoteConsumer extends Thread
     protected int posy;
     protected int posx;
     protected int x, y;
-    protected InputStream in;
+    protected StreamGobbler in;
     protected InputStream monitoringIn;
     protected JTextArea console;
     protected boolean canConsume;
@@ -31,6 +33,7 @@ public class RemoteConsumer extends Thread
     protected ServerConnection monitoringConnection;
     protected Session monitoringSession;
     protected String currentFileName;
+    private final int MAX_CHAR_BUFF = 10000;
 
     protected RemoteConsumer(JTextArea console, String serverName, String logName)
     {
@@ -78,27 +81,28 @@ public class RemoteConsumer extends Thread
     public void stopConsumer()
     {
 	canConsume = false;
+//	monitoringConnection.closeConnection();
+    }
+
+    protected void initialise()
+    {
+
     }
 
     @Override
     public void run()
     {
-	byte[] buff = new byte[8192];
+	// Initialise the connection
+//	initialise();
+//	currentFileName = getFileName();
+
+//	byte[] buff = new byte[8192];
 	canConsume = true;
 
-	new Thread()
-	{
-	    @Override
-	    public void run()
-	    {
-		// TODO : monitoring thread
 
-		while (true)
-		{
-
-		}
-	    }
-	}.start();
+//	UpdaterDaemon updaterDaemonThread = new UpdaterDaemon();
+//	Timer stateTimer = new Timer(true);
+//	stateTimer.scheduleAtFixedRate(updaterDaemonThread, 4000, 4000);
 
 	while (canConsume)
 	{
@@ -114,6 +118,10 @@ public class RemoteConsumer extends Thread
 
 	    writeToConsole(readUntilPattern());
 	}
+
+	// Stop the updater daemon
+//	stateTimer.cancel();
+//	updaterDaemonThread.cancel();
     }
 
     protected void clearErrs()
@@ -135,9 +143,14 @@ public class RemoteConsumer extends Thread
 	{
 	    StringBuilder sb = new StringBuilder();
 
-	    char ch = (char) in.read();
+	    int charCounter = 0;
+	    char ch;
+
 	    while (true)
 	    {
+		ch = (char) in.read();
+		++charCounter;
+
 		sb.append(ch);
 		for (Filter f : filterMap.values())
 		{
@@ -153,8 +166,8 @@ public class RemoteConsumer extends Thread
 
 			    String receivedLines[] = sb.toString().split("\\n");
 
-			    // Get the number of lines before
-			    for (int i = f.getLinesBefore(); i > 0; --i)
+			    // Get the number of lines before if there are any
+			    for (int i = f.getLinesBefore(); i > 0 && receivedLines.length > 1; --i)
 			    {
 				if (i == f.getLinesBefore() && receivedLines.length - 1 - i < 0)
 				{
@@ -165,8 +178,8 @@ public class RemoteConsumer extends Thread
 				finalMessage.append("\n");
 			    }
 
+			    // Append the line with the actual keyword
 			    finalMessage.append(receivedLines[receivedLines.length - 1]);
-
 
 			    int numLinesAfter = f.getLineAfter();
 			    // Wait for the number of lines after (as well as the current line which contained the keyword)
@@ -222,7 +235,11 @@ public class RemoteConsumer extends Thread
 			}
 		    }
 		}
-		ch = (char) in.read();
+
+		if (charCounter == MAX_CHAR_BUFF)
+		{
+		    return "";
+		}
 	    }
 	}
 	catch (IOException ex)
@@ -245,8 +262,20 @@ public class RemoteConsumer extends Thread
 	return sb.toString();
     }
 
-    protected void getFileName()
+    protected void ensureConnection()
     {
+	monitoringSession = monitoringConnection.getSession();
+    }
+
+    /**
+     * Gets the latest log file's name
+     *
+     * @return The full name of the latest log file. Ex.: "test-[date].log"
+     */
+    protected String getFileName()
+    {
+	ensureConnection();
+
 	monitoringSession.execCommand("ls -rt " + logName + "* | tail -1");
 
 	StringBuilder sb = new StringBuilder();
@@ -255,7 +284,7 @@ public class RemoteConsumer extends Thread
 	{
 	    try
 	    {
-		sb.append((char) in.read());
+		sb.append((char) monitoringIn.read());
 
 		if (sb.toString().endsWith("\n"))
 		{
@@ -268,7 +297,9 @@ public class RemoteConsumer extends Thread
 	    }
 	}
 
-	currentFileName = sb.toString();
+	monitoringConnection.closeSession();
+
+	return sb.toString();
     }
 
     // TODO: create subclass that will extend TimerTask
@@ -276,4 +307,15 @@ public class RemoteConsumer extends Thread
 //    OfflineStateManager stateManagerThread = new OfflineStateManager();
 //    Timer stateTimer = new Timer(true);
 //    stateTimer.scheduleAtFixedRate(stateManagerThread, 4000, 4000);
+    private class UpdaterDaemon extends TimerTask
+    {
+	@Override
+	public void run()
+	{
+	    if (!currentFileName.equals(getFileName()))
+	    {
+		ConnectionManager.getInstance().restartConnection(serverName, logName);
+	    }
+	}
+    }
 }

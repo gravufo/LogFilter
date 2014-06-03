@@ -1,5 +1,6 @@
 package connection;
 
+import ch.ethz.ssh2.StreamGobbler;
 import javax.swing.JTextArea;
 import persistence.Preferences;
 
@@ -24,11 +25,24 @@ public class RemoteConsumerSSH extends RemoteConsumer
     {
 	super(console, serverName, logName);
 
-	monitoringConnection = new ServerConnectionSSH(Preferences.getInstance().getServer(serverName).getHostname(), Preferences.getInstance().getServerAccount());
-	monitoringSession = monitoringConnection.getSession();
+	in = new StreamGobbler(((SSHSession) session).getSession().getStdout());
 
-	in = ((SSHSession) session).getSession().getStdout();
 	//err = new StreamGobbler(((SSHSession) session).getSession().getStderr());
+    }
+
+    @Override
+    protected void initialise()
+    {
+	monitoringConnection = new ServerConnectionSSH(Preferences.getInstance().getServer(serverName).getHostname(), Preferences.getInstance().getServerAccount());
+	monitoringConnection.connect();
+    }
+
+    @Override
+    protected void ensureConnection()
+    {
+	super.ensureConnection();
+
+	monitoringIn = ((SSHSession) monitoringSession).getSession().getStdout();
     }
 
     @Override

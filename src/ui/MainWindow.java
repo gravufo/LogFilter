@@ -1,5 +1,6 @@
 package ui;
 
+import collections.Pair;
 import connection.ConnectionManager;
 import connection.RemoteConsumerManager;
 import java.awt.Rectangle;
@@ -7,9 +8,17 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.BoundedRangeModel;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JTextArea;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.DocumentFilter;
 import logfilter.Server;
 import persistence.Preferences;
 
@@ -26,18 +35,30 @@ public class MainWindow extends JFrame
      */
     public MainWindow()
     {
-        initComponents();
-	
-	Rectangle r = Preferences.getInstance().getUIPreference(id);
-	
-	if(r != null)
+	initComponents();
+
+	Pair<Rectangle, Integer> temp = Preferences.getInstance().getUIPreference(id);
+	if (temp != null)
 	{
-	    setBounds(r);
+	    Rectangle r = temp.getKey();
+
+	    if (r != null)
+	    {
+		setBounds(r);
+		bounds = r;
+		setExtendedState(temp.getValue());
+	    }
+	}
+	else
+	{
+	    bounds = getBounds();
 	}
 
-	// Disable the auto scroll EDIT: Don't, we want to be able to write correctly.
-//	((DefaultCaret) jTextAreaOutput.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+	// Set the document filter to limit the number of lines
+	((AbstractDocument) jTextAreaOutput.getDocument()).setDocumentFilter(new ConsoleDocumentFilter(jTextAreaOutput, MAX_LINE_NUM));
 
+	// Disable the auto scroll EDIT: Don't, we want to be able to write correctly.
+	((DefaultCaret) jTextAreaOutput.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 	// Set the listener for the scrollpane to enhance auto-scroll functionality
 	jScrollPaneOutputText.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener()
 	{
@@ -50,6 +71,7 @@ public class MainWindow extends JFrame
 	    @Override
 	    public void adjustmentValueChanged(AdjustmentEvent e)
 	    {
+		((DefaultCaret) jTextAreaOutput.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 
 		// Get the new max :
 		int newMax = _model.getMaximum();
@@ -57,7 +79,6 @@ public class MainWindow extends JFrame
 		// If the new max has changed and if we were scrolled to bottom :
 		if (newMax != _max && (_val + _ext == _max))
 		{
-
 		    // Scroll to bottom :
 		    _model.setValue(_model.getMaximum() - _model.getExtent());
 		}
@@ -121,17 +142,17 @@ public class MainWindow extends JFrame
 	    jTextFieldServersToMonitor.setText(serversToDisplay);
 
 	    jButtonConnect.setEnabled(true);
-	    jButtonRefresh.setEnabled(true);
 	}
     }
 
     private void terminationCleanup()
     {
 	// No need to cancel, since no prefs have been modified if we're here
+	//
 	// For consistency, we save window location and size
-	Preferences.getInstance().setUIPreference(id, getBounds());
-	Preferences.getInstance().save();
+	Preferences.getInstance().setUIPreference(id, bounds, getExtendedState());
 
+	Preferences.getInstance().save();
     }
 
     /**
@@ -163,6 +184,17 @@ public class MainWindow extends JFrame
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Log Monitor");
         setFocusTraversalPolicyProvider(true);
+        addComponentListener(new java.awt.event.ComponentAdapter()
+        {
+            public void componentMoved(java.awt.event.ComponentEvent evt)
+            {
+                formComponentMoved(evt);
+            }
+            public void componentResized(java.awt.event.ComponentEvent evt)
+            {
+                formComponentResized(evt);
+            }
+        });
         addWindowListener(new java.awt.event.WindowAdapter()
         {
             public void windowClosing(java.awt.event.WindowEvent evt)
@@ -207,6 +239,14 @@ public class MainWindow extends JFrame
         jTextFieldServersToMonitor.setFocusable(false);
 
         jButtonRefresh.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/refresh-icon.png"))); // NOI18N
+        jButtonRefresh.setEnabled(false);
+        jButtonRefresh.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonRefreshActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanelRootLayout = new javax.swing.GroupLayout(jPanelRoot);
         jPanelRoot.setLayout(jPanelRootLayout);
@@ -308,8 +348,18 @@ public class MainWindow extends JFrame
 
     private void jMenuItemPreferencesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemPreferencesActionPerformed
     {//GEN-HEADEREND:event_jMenuItemPreferencesActionPerformed
-        new PreferencesDialog(MainWindow.this, true).showDialog();
+	// Verify if there is a connection alive - kill it if so
+	connectionManager.removeConnections();
+
+	// Re-enable the connect button if it was disabled
+	if (!jButtonConnect.isEnabled())
+	{
+	    jButtonConnect.setEnabled(true);
+	    jButtonRefresh.setEnabled(false);
+	}
+	new PreferencesDialog(MainWindow.this, true).showDialog();
 	loadProperties();
+
 //	new Thread()
 //	{
 //	    @Override
@@ -328,6 +378,7 @@ public class MainWindow extends JFrame
     private void jButtonConnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonConnectActionPerformed
     {//GEN-HEADEREND:event_jButtonConnectActionPerformed
 	jButtonConnect.setEnabled(false);
+	jButtonRefresh.setEnabled(true);
 
 	new Thread()
 	{
@@ -340,10 +391,90 @@ public class MainWindow extends JFrame
 	}.start();
     }//GEN-LAST:event_jButtonConnectActionPerformed
 
+    private void jButtonRefreshActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRefreshActionPerformed
+    {//GEN-HEADEREND:event_jButtonRefreshActionPerformed
+	connectionManager.restartConnections();
+    }//GEN-LAST:event_jButtonRefreshActionPerformed
+
+    private void formComponentMoved(java.awt.event.ComponentEvent evt)//GEN-FIRST:event_formComponentMoved
+    {//GEN-HEADEREND:event_formComponentMoved
+	if (getExtendedState() == JFrame.NORMAL)
+	{
+	    bounds = getBounds();
+	}
+    }//GEN-LAST:event_formComponentMoved
+
+    private void formComponentResized(java.awt.event.ComponentEvent evt)//GEN-FIRST:event_formComponentResized
+    {//GEN-HEADEREND:event_formComponentResized
+	if (getExtendedState() == JFrame.NORMAL)
+	{
+	    bounds = getBounds();
+	}
+    }//GEN-LAST:event_formComponentResized
+
     private void jTextAreaOutputKeyTyped(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextAreaOutputKeyTyped
     {//GEN-HEADEREND:event_jTextAreaOutputKeyTyped
-        // TODO: send every character to the STDOut of the ssh/telnet session (TEMPORARY)
+//        Point newPosition = jTextAreaOutput.getLocation();
+//
+//	if(evt.getK)
+//
+//	jTextAreaOutput.getCaret().setMagicCaretPosition();
+
+	// Small hack to make the writing work WITH the custom auto scrolling
+	DefaultCaret caret = (DefaultCaret) jTextAreaOutput.getCaret();
+	caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
     }//GEN-LAST:event_jTextAreaOutputKeyTyped
+
+    /**
+     * This class represents a filter for the number of lines to display in the
+     * console output.
+     */
+    public class ConsoleDocumentFilter extends DocumentFilter
+    {
+	private JTextArea console;
+	private int max;
+
+	public ConsoleDocumentFilter(JTextArea console, int max)
+	{
+	    this.console = console;
+	    this.max = max;
+	}
+
+	@Override
+	public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException
+	{
+	    super.replace(fb, offset, length, text, attrs);
+	    int lines = console.getLineCount();
+
+	    if (lines > max)
+	    {
+		int linesToRemove = lines - max - 1;
+		int lengthToRemove = console.getLineStartOffset(linesToRemove);
+		remove(fb, 0, lengthToRemove);
+	    }
+	}
+
+	@Override
+	public void insertString(DocumentFilter.FilterBypass fb, int offset, String string, AttributeSet attr)
+	{
+	    try
+	    {
+		super.insertString(fb, offset, string, attr);
+		int lines = console.getLineCount();
+
+		if (lines > max)
+		{
+		    int linesToRemove = lines - max - 1;
+		    int lengthToRemove = console.getLineStartOffset(linesToRemove);
+		    remove(fb, 0, lengthToRemove);
+		}
+	    }
+	    catch (BadLocationException ex)
+	    {
+		Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+	    }
+	}
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonConnect;
@@ -365,4 +496,6 @@ public class MainWindow extends JFrame
     private final int id = 0;
     private ArrayList<Server> serverList;
     private ConnectionManager connectionManager;
+    private Rectangle bounds;
+    private final int MAX_LINE_NUM = 30000;
 }

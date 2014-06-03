@@ -40,8 +40,8 @@ public class ServerConnectionTelnet extends ServerConnection
             readUntil("login: ", in);
 	    out.println(account.getUserName());
 	    out.flush();
+
 	    readUntil("Password: ", in);
-	    out.flush();
 	    out.println(account.getPassword());
 	    out.flush();
 
@@ -54,25 +54,29 @@ public class ServerConnectionTelnet extends ServerConnection
 	    return false;
 	}
 
-	return isConnected = true;
+	return connected = true;
     }
 
     @Override
     public Session getSession()
     {
-	if (isConnected)
+	if (!sessionActive)
 	{
+	    sessionActive = true;
 	    return session;
 	}
-	else
-	{
-	    return null;
-	}
+
+	return null;
     }
 
     @Override
     public void closeSession()
     {
+	if (sessionActive)
+	{
+	    session.closeSession();
+	    sessionActive = false;
+	}
     }
 
     /**
@@ -84,12 +88,12 @@ public class ServerConnectionTelnet extends ServerConnection
 	/*
 	 * CLOSE THE CONNECTION
 	 */
-	if (isConnected)
+	if (connected)
 	{
 	    try
 	    {
 		((TelnetSession) session).getSession().disconnect();
-		isConnected = false;
+		connected = false;
 	    }
 	    catch (IOException ex)
 	    {

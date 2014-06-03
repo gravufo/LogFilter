@@ -60,15 +60,12 @@ public class ConnectionManager
 	ServerConnection con;
 	if ((con = connection.remove(logName)) != null)
 	{
-	    if (con.isConnected)
+	    if (con.isSessionActive())
 	    {
-		con.closeConnection();
-		if (con.isSessionActive)
-		{
-		    con.closeSession();
-		    remoteConsumerManager.removeRemoteConsumer(serverName, logName);
-		}
+		remoteConsumerManager.removeRemoteConsumer(serverName, logName);
 	    }
+	    con.closeSession();
+	    con.closeConnection();
 
 	    if (connection.isEmpty())
 	    {
@@ -278,6 +275,52 @@ public class ConnectionManager
     }
 
     /**
+     * Restarts a single connection to a server for a certain log file
+     *
+     * @param serverName The name of the server to connect to
+     * @param logName    The name of the log file to monitor
+     *
+     * @return true if the new connection is successful
+     */
+    public synchronized boolean restartConnection(String serverName, String logName)
+    {
+	if (removeConnection(serverName, logName))
+	{
+	    addConnection(Preferences.getInstance().getServer(serverName), logName, Preferences.getInstance().getServerAccount());
+	    startConnection(serverName, logName);
+	    executeCommand(serverName, logName);
+
+	    return true;
+	}
+
+	return false;
+    }
+
+    /**
+     * Restarts every connection
+     *
+     * @return true if all the connections were restarted successfully, false
+     *         otherwise
+     */
+    public synchronized boolean restartConnections()
+    {
+	boolean success = true;
+
+	for (Map.Entry<String, Map<String, ServerConnection>> sc : new HashSet<>(connectionsMap.entrySet()))
+	{
+	    for (Map.Entry<String, ServerConnection> connection : new HashSet<>(sc.getValue().entrySet()))
+	    {
+		if (!restartConnection(sc.getKey(), connection.getKey()))
+		{
+		    success = false;
+		}
+	    }
+	}
+
+	return success;
+    }
+
+    /**
      * This method executes the command of a single registered server
      *
      * @param serverName Name of the server registered to this manager
@@ -293,7 +336,7 @@ public class ConnectionManager
      * This method executes the commands of all the servers registered to this
      * manager
      */
-    public synchronized void executeCommands()
+    public void executeCommands()
     {
 	for (Map.Entry<String, Map<String, ServerConnection>> sc : connectionsMap.entrySet())
 	{

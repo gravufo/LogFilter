@@ -1,11 +1,13 @@
 package collections;
 
+import java.io.Serializable;
+
 /**
  * Custom Pair class
  *
  * @author cartin
  */
-public class Pair<L, R>
+public class Pair<L, R> implements Serializable
 {
     private L l;
     private R r;

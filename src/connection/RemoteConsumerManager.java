@@ -102,12 +102,18 @@ public class RemoteConsumerManager
      */
     public synchronized void removeRemoteConsumer(String serverName, String logName)
     {
-	Pair<Session, RemoteConsumer> temp = remoteConsumerMap.remove(serverName).get(logName);
+	Map<String, Pair<Session, RemoteConsumer>> server = remoteConsumerMap.get(serverName);
+	Pair<Session, RemoteConsumer> temp = server.remove(logName);
 
 	// The session is closed in the Connection Manager (yeah it's bad, oh well)
 	//temp.getKey().close();
 	// Stop the consumer from its infinite loop
 	temp.getValue().stopConsumer();
+
+	if (server.isEmpty())
+	{
+	    remoteConsumerMap.remove(serverName);
+	}
     }
 
     /**

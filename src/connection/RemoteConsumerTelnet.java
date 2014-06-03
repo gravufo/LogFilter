@@ -21,15 +21,17 @@ public class RemoteConsumerTelnet extends RemoteConsumer
      */
     public RemoteConsumerTelnet(JTextArea console, Session session, String serverName, String logName)
     {
-
 	super(console, serverName, logName);
 
+	in = new StreamGobbler(((TelnetSession) session).getSession().getInputStream());
+    }
+
+    @Override
+    protected void initialise()
+    {
 	monitoringConnection = new ServerConnectionTelnet(Preferences.getInstance().getServer(serverName).getHostname(), Preferences.getInstance().getServerAccount());
 	monitoringConnection.connect();
 	monitoringSession = monitoringConnection.getSession();
-
-	in = new StreamGobbler(((TelnetSession) session).getSession().getInputStream());
-
 	monitoringIn = ((TelnetSession) monitoringSession).getSession().getInputStream();
     }
 }

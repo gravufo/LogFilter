@@ -29,43 +29,45 @@ public class ServerConnectionSSH extends ServerConnection
     @Override
     public boolean connect()
     {
-	connection = new Connection(hostname);
-
-	try
+	if (!connected)
 	{
-	    /*
-	     * CONNECTION PHASE
-	     */
-	    connection.connect();
+	    connection = new Connection(hostname);
 
-	    /*
-	     * AUTHENTICATION PHASE
-	     *
-	     * Here, we are just using Username/Password authentication with
-	     * absolutely no certificate verification or other type of auth.
-	     */
-	    boolean res = connection.authenticateWithPassword(account.getUserName(), new String(account.getPassword()));
-
-	    if (res == false)
+	    try
 	    {
-		System.out.println("The username or password is incorrect");
+		/*
+		 * CONNECTION PHASE
+		 */
+		connection.connect();
 
-		// User must change prefs, so we just cancel
-		closeConnection();
+		/*
+		 * AUTHENTICATION PHASE
+		 *
+		 * Here, we are just using Username/Password authentication with
+		 * absolutely no certificate verification or other type of auth.
+		 */
+		boolean res = connection.authenticateWithPassword(account.getUserName(), new String(account.getPassword()));
+
+		if (res == false)
+		{
+		    System.out.println("The username or password is incorrect");
+
+		    // User must change prefs, so we just cancel
+		    closeConnection();
+		    return false;
+		}
+
+		/*
+		 * AUTHENTICATION SUCCESSFUL
+		 */
+	    }
+	    catch (IOException e)
+	    {
+		JOptionPane.showMessageDialog(MainWindow.getFrames()[0], "Exception: " + e.getMessage());
 		return false;
 	    }
-
-	    /*
-	     * AUTHENTICATION SUCCESSFUL
-	     */
 	}
-	catch (IOException e)
-	{
-	    JOptionPane.showMessageDialog(MainWindow.getFrames()[0], "Exception: " + e.getMessage());
-	    return false;
-	}
-
-	return isConnected = true;
+	return connected = true;
     }
 
     /*
@@ -79,12 +81,12 @@ public class ServerConnectionSSH extends ServerConnection
     @Override
     public Session getSession()
     {
-	if (session == null)
+	if (!sessionActive)
 	{
 	    try
 	    {
 		session = new SSHSession(connection);
-		isSessionActive = true;
+		sessionActive = true;
 	    }
 	    catch (IOException e)
 	    {
@@ -104,11 +106,10 @@ public class ServerConnectionSSH extends ServerConnection
 	/**
 	 * CLOSE THE SESSION
 	 */
-	if (isSessionActive)
+	if (sessionActive)
 	{
-	    ((SSHSession) session).getSession().close();
-	    session = null;
-	    isSessionActive = false;
+	    session.closeSession();
+	    sessionActive = false;
 	}
     }
 
@@ -121,10 +122,10 @@ public class ServerConnectionSSH extends ServerConnection
 	/*
 	 * CLOSE THE CONNECTION
 	 */
-	if (isConnected)
+	if (connected)
 	{
 	    connection.close();
-	    isConnected = false;
+	    connected = false;
 	}
     }
 }

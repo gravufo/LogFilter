@@ -1,5 +1,6 @@
 package persistence;
 
+import collections.Pair;
 import java.awt.Rectangle;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -218,12 +219,12 @@ public class Preferences implements Serializable
 	instance.serverPassword = serverAccount.getPassword();
     }
     
-    public void setUIPreference(int id, Rectangle pref)
+    public void setUIPreference(int id, Rectangle pref, int extendedState)
     {
-	instance.uIPreferences.put(id, pref);
+	instance.uIPreferences.put(id, new Pair<>(pref, extendedState));
     }
     
-    public Rectangle getUIPreference(int id)
+    public Pair<Rectangle, Integer> getUIPreference(int id)
     {
 	return instance.uIPreferences.get(id);
     }
@@ -278,5 +279,5 @@ public class Preferences implements Serializable
     /**
      * Position and size of each window in the UI
      */
-    private Map<Integer, Rectangle> uIPreferences;
+    private Map<Integer, Pair<Rectangle, Integer>> uIPreferences;
 }

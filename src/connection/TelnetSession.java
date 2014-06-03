@@ -30,6 +30,7 @@ public class TelnetSession extends Session
     public void closeSession()
     {
 	// Do nothing since Telnet does not have any sessions
+	printStream.close();
     }
 
     @Override

@@ -11,16 +11,16 @@ public abstract class ServerConnection
 {
     protected String hostname;
     protected PasswordAuthentication account;
-    protected boolean isConnected;
-    protected boolean isSessionActive;
+    protected boolean connected;
+    protected boolean sessionActive;
     protected Session session;
 
     public ServerConnection(String hostname, PasswordAuthentication account)
     {
 	this.hostname = hostname;
 	this.account = account;
-	isConnected = false;
-	isSessionActive = false;
+	connected = false;
+	sessionActive = false;
     }
 
     /**
@@ -38,4 +38,15 @@ public abstract class ServerConnection
      * Closes an active connection. Does nothing if the connection is inactive.
      */
     public abstract void closeConnection();
+
+    public boolean isConnected()
+    {
+	return connected;
+    }
+
+    public boolean isSessionActive()
+    {
+	return sessionActive;
+    }
+
 }

@@ -1,5 +1,6 @@
 package ui;
 
+import collections.Pair;
 import java.awt.AWTKeyStroke;
 import java.awt.Component;
 import java.awt.Font;
@@ -56,11 +57,15 @@ public class PreferencesDialog extends javax.swing.JDialog
 	jListTemplateLogFiles.setModel(templateLogFilesListModel);
 	jListLogFileFilters.setModel(logFileFilterModel);
 
-	Rectangle r = Preferences.getInstance().getUIPreference(id);
-
-	if (r != null)
+	Pair<Rectangle, Integer> temp = Preferences.getInstance().getUIPreference(id);
+	if (temp != null)
 	{
-	    setBounds(r);
+	    Rectangle r = temp.getKey();
+
+	    if (r != null)
+	    {
+		setBounds(r);
+	    }
 	}
 	else
 	{
@@ -284,7 +289,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	Preferences.getInstance().cancel();
 
 	// For consistency, we save window location and size
-	Preferences.getInstance().setUIPreference(id, getBounds());
+	Preferences.getInstance().setUIPreference(id, getBounds(), 0);
 	Preferences.getInstance().save();
 
 	// No need to save, so we just close pref window
@@ -433,7 +438,6 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelLogFiles.setText("Log Files");
         jLabelLogFiles.setFocusable(false);
 
-        jListLogFiles.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jListLogFiles.setToolTipText("This list contains the log files to monitor on the selected server.");
         jListLogFiles.setEnabled(false);
         jListLogFiles.setNextFocusableComponent(jButtonAddLogFile);
@@ -760,7 +764,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelLogFileFilterPrePrint.setText("Number of lines to display before:");
         jLabelLogFileFilterPrePrint.setFocusable(false);
 
-        jSpinnerLogFileFilterPrePrint.setModel(new javax.swing.SpinnerNumberModel(10, 0, 10000, 1));
+        jSpinnerLogFileFilterPrePrint.setModel(new javax.swing.SpinnerNumberModel(10, 0, 50, 1));
         jSpinnerLogFileFilterPrePrint.setEnabled(false);
         jSpinnerLogFileFilterPrePrint.setNextFocusableComponent(jSpinnerLogFileFilterPostPrint);
         jSpinnerLogFileFilterPrePrint.addChangeListener(new javax.swing.event.ChangeListener()
@@ -771,7 +775,7 @@ public class PreferencesDialog extends javax.swing.JDialog
             }
         });
 
-        jSpinnerLogFileFilterPostPrint.setModel(new javax.swing.SpinnerNumberModel(10, 0, 10000, 1));
+        jSpinnerLogFileFilterPostPrint.setModel(new javax.swing.SpinnerNumberModel(10, 0, 50, 1));
         jSpinnerLogFileFilterPostPrint.setEnabled(false);
         jSpinnerLogFileFilterPostPrint.setNextFocusableComponent(jButtonOK);
         jSpinnerLogFileFilterPostPrint.addChangeListener(new javax.swing.event.ChangeListener()
@@ -1201,7 +1205,7 @@ public class PreferencesDialog extends javax.swing.JDialog
     private void jButtonOKActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonOKActionPerformed
     {//GEN-HEADEREND:event_jButtonOKActionPerformed
 	// Save window location and size
-	Preferences.getInstance().setUIPreference(id, getBounds());
+	Preferences.getInstance().setUIPreference(id, getBounds(), 0);
 
 	// Save all the modifications
 	Preferences.getInstance().save();
@@ -1215,7 +1219,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	// Cancel changes before saving window prefs
 	Preferences.getInstance().cancel();
 
-	Preferences.getInstance().setUIPreference(id, getBounds());
+	Preferences.getInstance().setUIPreference(id, getBounds(), 0);
 
 	Preferences.getInstance().save();
     }//GEN-LAST:event_formWindowClosing
@@ -1455,7 +1459,15 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    return;
 	}
 
-	logToEdit.setFilePath(jTextFieldLogFilePath.getText());
+	String logFilePath;
+
+	if (!(logFilePath = jTextFieldLogFilePath.getText()).endsWith("/") && !logFilePath.isEmpty())
+	{
+	    logFilePath += "/";
+	    jTextFieldLogFilePath.setText(logFilePath);
+	}
+
+	logToEdit.setFilePath(logFilePath);
     }//GEN-LAST:event_jTextFieldLogFilePathFocusLost
 
     private void jButtonLogFileFilterAddActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonLogFileFilterAddActionPerformed
@@ -1542,21 +1554,24 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void jButtonRemoveLogFileActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRemoveLogFileActionPerformed
     {//GEN-HEADEREND:event_jButtonRemoveLogFileActionPerformed
-	// Remove it from the respective server
-	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).removeLog((String) jListLogFiles.getSelectedValue());
 
-	// Remove it from the current list
-	int index = serverLogFilesListModel.indexOf((String) jListLogFiles.getSelectedValue());
-	serverLogFilesListModel.removeElement((String) jListLogFiles.getSelectedValue());
-
-	// Select first object
-	if (index != 0)
+	for (String logName : new ArrayList<String>(jListLogFiles.getSelectedValuesList()))
 	{
-	    --index;
+	    // Remove it from the respective server
+	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).removeLog(logName);
+
+	    // Remove it from the current list
+	    int index = serverLogFilesListModel.indexOf(logName);
+	    serverLogFilesListModel.removeElement(logName);
+
+	    // Select previous object
+	    if (index != 0)
+	    {
+		--index;
+	    }
+
+	    jListLogFiles.setSelectedIndex(index);
 	}
-
-	jListLogFiles.setSelectedIndex(index);
-
 	// Reload properties in case there are no other objects
 	loadServerLogProperties();
     }//GEN-LAST:event_jButtonRemoveLogFileActionPerformed
