@@ -19,6 +19,7 @@ public class LogFileChooser extends javax.swing.JDialog
      * @param parent
      * @param modal
      * @param logList
+     * @param selectedList
      */
     public LogFileChooser(JDialog parent, boolean modal, DefaultListModel logList, DefaultListModel selectedList)
     {

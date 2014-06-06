@@ -1,6 +1,8 @@
 package persistence;
 
 import collections.Pair;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.Rectangle;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -42,27 +44,143 @@ public class Preferences implements Serializable
 	    'b', 'w', 'a', 'd', 'm', 'i', 'n'
 	};
 
+	maxNumLines = 30000;
+	flashTaskbar = true;
+
+	// Set the default green on black colors
+	backgroundColor = new Color(0, 0, 0);
+	foregroundColor = new Color(0, 255, 0);
+
+	terminalFont = new Font("Monospace", Font.PLAIN, 13);
+
 	// Create new default log templates
-	Log defaultLog = new Log("xtail");
-	defaultLog.setFilePath("/var/broadworks/logs/appserver/");
-	defaultLog.setNamePrefix("XSLog");
-	logMap.put("xtail", defaultLog);
-
-	defaultLog = new Log("xotail");
-	defaultLog.setFilePath("/var/broadworks/logs/appserver/");
-	defaultLog.setNamePrefix("XSOutput");
-	logMap.put("xotail", defaultLog);
-
-	defaultLog = new Log("ptail");
+	/**
+	 * APPLICATION SERVER LOGS
+	 */
+	Log defaultLog = new Log("AS-PSLog");
 	defaultLog.setFilePath("/var/broadworks/logs/appserver/");
 	defaultLog.setNamePrefix("PSLog");
-	logMap.put("ptail", defaultLog);
+	logMap.put("AS-PSLog", defaultLog);
 
-	defaultLog = new Log("potail");
+	defaultLog = new Log("AS-PSOutput");
 	defaultLog.setFilePath("/var/broadworks/logs/appserver/");
 	defaultLog.setNamePrefix("PSOutput");
-	logMap.put("potail", defaultLog);
+	logMap.put("AS-PSOutput", defaultLog);
 
+	defaultLog = new Log("AS-XSLog");
+	defaultLog.setFilePath("/var/broadworks/logs/appserver/");
+	defaultLog.setNamePrefix("XSLog");
+	logMap.put("AS-XSLog", defaultLog);
+
+	defaultLog = new Log("AS-XSOutput");
+	defaultLog.setFilePath("/var/broadworks/logs/appserver/");
+	defaultLog.setNamePrefix("XSOutput");
+	logMap.put("AS-XSOutput", defaultLog);
+
+	/**
+	 * EM SERVER LOGS
+	 */
+	defaultLog = new Log("EMS-EmsBeLog");
+	defaultLog.setFilePath("/var/broadworks/logs/emsBackEnd/");
+	defaultLog.setNamePrefix("EmsBeLog");
+	logMap.put("EMS-EmsBeLog", defaultLog);
+
+	defaultLog = new Log("EMS-EmsbeOutput");
+	defaultLog.setFilePath("/var/broadworks/logs/emsBackEnd/");
+	defaultLog.setNamePrefix("EmsbeOutput");
+	logMap.put("EMS-EmsbeOutput", defaultLog);
+
+	/**
+	 * MEDIA SERVER LOGS
+	 */
+	defaultLog = new Log("MS-msfe");
+	defaultLog.setFilePath("/var/broadworks/logs/mediaserver0/");
+	defaultLog.setNamePrefix("msfe*.txt");
+	logMap.put("MS-msfe", defaultLog);
+
+	defaultLog = new Log("MS-msfeOutput");
+	defaultLog.setFilePath("/var/broadworks/logs/mediaserver0/");
+	defaultLog.setNamePrefix("msfeOutput");
+	logMap.put("MS-msfeOutput", defaultLog);
+
+	/**
+	 * NETWORK SERVER LOGS
+	 */
+	defaultLog = new Log("NS-PSLog");
+	defaultLog.setFilePath("/var/broadworks/logs/routingserver/");
+	defaultLog.setNamePrefix("NSPSLog");
+	logMap.put("NS-PSLog", defaultLog);
+
+	defaultLog = new Log("NS-PSOutput");
+	defaultLog.setFilePath("/var/broadworks/logs/routingserver/");
+	defaultLog.setNamePrefix("NSPSOutput");
+	logMap.put("NS-PSOutput", defaultLog);
+
+	defaultLog = new Log("NS-XSLog");
+	defaultLog.setFilePath("/var/broadworks/logs/routingserver/");
+	defaultLog.setNamePrefix("NSXSLog");
+	logMap.put("NS-XSLog", defaultLog);
+
+	defaultLog = new Log("NS-XSOutput");
+	defaultLog.setFilePath("/var/broadworks/logs/routingserver/");
+	defaultLog.setNamePrefix("NSXSOutput");
+	logMap.put("NS-XSOutput", defaultLog);
+
+	/**
+	 * PROFILE SERVER LOGS
+	 */
+	defaultLog = new Log("PS-CCFileReposLog");
+	defaultLog.setFilePath("/var/broadworks/logs/profileserver/");
+	defaultLog.setNamePrefix("CCFileReposLog");
+	logMap.put("PS-CCFileReposLog", defaultLog);
+
+	defaultLog = new Log("PS-CCReportingLog");
+	defaultLog.setFilePath("/var/broadworks/logs/profileserver/");
+	defaultLog.setNamePrefix("CCReportingLog");
+	logMap.put("PS-CCReportingLog", defaultLog);
+
+	defaultLog = new Log("PS-EnhancedCallLogsDBLog");
+	defaultLog.setFilePath("/var/broadworks/logs/profileserver/");
+	defaultLog.setNamePrefix("EnhancedCallLogsDBLog");
+	logMap.put("PS-EnhancedCallLogsDBLog", defaultLog);
+
+	defaultLog = new Log("PS-FileReposLog");
+	defaultLog.setFilePath("/var/broadworks/logs/profileserver/");
+	defaultLog.setNamePrefix("FileReposLog");
+	logMap.put("PS-FileReposLog", defaultLog);
+
+	/**
+	 * XSP LOGS
+	 */
+	defaultLog = new Log("XSP-BWCallCenter");
+	defaultLog.setFilePath("/var/broadworks/logs/xsp/callcenter/");
+	defaultLog.setNamePrefix("BWCallCenter");
+	logMap.put("XSP-BWCallCenter", defaultLog);
+
+	defaultLog = new Log("XSP-CCPublicReportingLog");
+	defaultLog.setFilePath("/var/broadworks/logs/xsp/");
+	defaultLog.setNamePrefix("CCPublicReportingLog");
+	logMap.put("XSP-CCPublicReportingLog", defaultLog);
+
+	defaultLog = new Log("XSP-CommPilotLog");
+	defaultLog.setFilePath("/var/broadworks/logs/xsp/");
+	defaultLog.setNamePrefix("CommPilotLog");
+	logMap.put("XSP-CommPilotLog", defaultLog);
+
+	defaultLog = new Log("XSP-dmsDebugLog");
+	defaultLog.setFilePath("/var/broadworks/logs/xsp/");
+	defaultLog.setNamePrefix("dmsDebugLog");
+	logMap.put("XSP-dmsDebugLog", defaultLog);
+
+	defaultLog = new Log("XSP-XsiActionsLog");
+	defaultLog.setFilePath("/var/broadworks/logs/xsp/");
+	defaultLog.setNamePrefix("XsiActionsLog");
+	logMap.put("XSP-XsiActionsLog", defaultLog);
+
+	defaultLog = new Log("XSP-XsiEventsLog");
+	defaultLog.setFilePath("/var/broadworks/logs/xsp/");
+	defaultLog.setNamePrefix("XsiEventsLog");
+	logMap.put("XSP-XsiEventsLog", defaultLog);
     }
 
     /**
@@ -78,6 +196,13 @@ public class Preferences implements Serializable
 	
 	serverUsername = preferences.serverUsername;
 	serverPassword = preferences.serverPassword;
+	maxNumLines = preferences.maxNumLines;
+	flashTaskbar = preferences.flashTaskbar;
+
+	foregroundColor = preferences.foregroundColor;
+	backgroundColor = preferences.backgroundColor;
+
+	terminalFont = preferences.terminalFont;
     }
 
     /**
@@ -169,7 +294,7 @@ public class Preferences implements Serializable
     {
 	ArrayList<Server> enabledServers = new ArrayList<>();
 	
-	for(Server s : serverMap.values())
+	for (Server s : instance.serverMap.values())
 	{
 	    if (s.isEnabled() && !s.getLogList().isEmpty())
 		enabledServers.add(s);
@@ -239,6 +364,57 @@ public class Preferences implements Serializable
 	return instance.logMap;
     }
 
+    public int getMaxNumLines()
+    {
+	return instance.maxNumLines;
+    }
+
+    public void setMaxNumLines(int maxNumLines)
+    {
+	instance.maxNumLines = maxNumLines;
+    }
+
+    public boolean isFlashTaskbar()
+    {
+	return instance.flashTaskbar;
+    }
+
+    public void setFlashTaskbar(boolean flashTaskbar)
+    {
+	instance.flashTaskbar = flashTaskbar;
+    }
+
+    public Color getForegroundColor()
+    {
+	return instance.foregroundColor;
+    }
+
+    public void setForegroundColor(Color foregroundColor)
+    {
+	instance.foregroundColor = foregroundColor;
+    }
+
+    public Color getBackgroundColor()
+    {
+	return instance.backgroundColor;
+    }
+
+    public void setBackgroundColor(Color backgroundColor)
+    {
+	instance.backgroundColor = backgroundColor;
+    }
+
+    public Font getTerminalFont()
+    {
+	return instance.terminalFont;
+    }
+
+    public void setTerminalFont(Font terminalFont)
+    {
+	instance.terminalFont = terminalFont;
+    }
+
+
     /**
      * Active instance of this class
      */
@@ -280,4 +456,29 @@ public class Preferences implements Serializable
      * Position and size of each window in the UI
      */
     private Map<Integer, Pair<Rectangle, Integer>> uIPreferences;
+
+    /**
+     * Maximum number of lines to display in the terminal text area
+     */
+    private int maxNumLines;
+
+    /**
+     * Determines whether we should flash the task bar when terminal is updated
+     */
+    private boolean flashTaskbar;
+
+    /**
+     * Color used to display text in the terminal
+     */
+    private Color foregroundColor;
+
+    /**
+     * The color of the background of the terminal
+     */
+    private Color backgroundColor;
+
+    /**
+     * Font of the text displayed in the terminal
+     */
+    private Font terminalFont;
 }

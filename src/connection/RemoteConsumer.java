@@ -4,12 +4,14 @@ import ch.ethz.ssh2.StreamGobbler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import logfilter.Filter;
+import logfilter.Log;
 import persistence.Preferences;
 
 /**
@@ -33,7 +35,10 @@ public class RemoteConsumer extends Thread
     protected ServerConnection monitoringConnection;
     protected Session monitoringSession;
     protected String currentFileName;
+    private String savedBuffer;
     private final int MAX_CHAR_BUFF = 10000;
+    private Timer stateTimer;
+    private UpdaterDaemon updaterDaemonThread;
 
     protected RemoteConsumer(JTextArea console, String serverName, String logName)
     {
@@ -44,8 +49,9 @@ public class RemoteConsumer extends Thread
 	this.console = console;
 	this.logName = logName;
 	this.serverName = serverName;
-	filterMap = Preferences.getInstance().getLog(logName).getFilterMap();
-	
+	filterMap = Preferences.getInstance().getLog(logName).getEnabledFilters();
+	savedBuffer = "";
+
 	lines = new char[y][];
     }
 
@@ -78,50 +84,51 @@ public class RemoteConsumer extends Thread
 	});
     }
 
+    /**
+     * This function will alert the thread to stop. There is no guarantee that
+     * the thread will stop immediately or will even stop at all.
+     */
     public void stopConsumer()
     {
 	canConsume = false;
-//	monitoringConnection.closeConnection();
     }
 
     protected void initialise()
     {
+	writeToConsole(serverName + " : " + logName + "\n");
 
+	currentFileName = getFileName();
+
+	updaterDaemonThread = new UpdaterDaemon();
+	stateTimer = new Timer(true);
+	stateTimer.scheduleAtFixedRate(updaterDaemonThread, 4000, 4000);
+    }
+
+    protected void cleanup()
+    {
+	monitoringConnection.closeConnection();
+
+	// Stop the updater daemon
+	stateTimer.cancel();
+	updaterDaemonThread.cancel();
+
+	writeToConsole(serverName + " : " + logName + "\n");
     }
 
     @Override
     public void run()
     {
 	// Initialise the connection
-//	initialise();
-//	currentFileName = getFileName();
+	initialise();
 
-//	byte[] buff = new byte[8192];
 	canConsume = true;
-
-
-//	UpdaterDaemon updaterDaemonThread = new UpdaterDaemon();
-//	Timer stateTimer = new Timer(true);
-//	stateTimer.scheduleAtFixedRate(updaterDaemonThread, 4000, 4000);
 
 	while (canConsume)
 	{
-//		int len = in.read(buff);
-//
-//		clearErrs();
-//
-//		if (len == -1)
-//		{
-//		    return;
-//		}
-//		addText(buff, len);
-
 	    writeToConsole(readUntilPattern());
 	}
 
-	// Stop the updater daemon
-//	stateTimer.cancel();
-//	updaterDaemonThread.cancel();
+	cleanup();
     }
 
     protected void clearErrs()
@@ -152,68 +159,138 @@ public class RemoteConsumer extends Thread
 		++charCounter;
 
 		sb.append(ch);
+
+		// Process each filter for this log file
 		for (Filter f : filterMap.values())
 		{
 		    char lastChar = f.getKeyword().charAt(f.getKeyword().length() - 1);
 
+		    // If the last character of our filter is the same as the
+		    // last character received...
+		    // This is for performance concerns, prevents the checking
+		    // of each single character when we have no clue if it is
+		    // even remotely close to our filter
 		    if (ch == lastChar)
 		    {
+			// If we found a match with the current filter
 			if (sb.toString().toLowerCase().endsWith(f.getKeyword()))
 			{
 			    StringBuilder finalMessage = new StringBuilder();
 
+			    // Append the message banner
 			    finalMessage.append(addServerBanner());
 
+			    // Append the saved buffer in case there was anything
+			    finalMessage.append(savedBuffer);
+
+			    //Clear it afterwards
+			    savedBuffer = "";
+
+			    // Split our buffer by line. Last line will contain
+			    // the keyword we were looking for
 			    String receivedLines[] = sb.toString().split("\\n");
 
-			    // Get the number of lines before if there are any
-			    for (int i = f.getLinesBefore(); i > 0 && receivedLines.length > 1; --i)
+			    // -2 because we don't want to search the line
+			    // containing the keyword found (aka the latest line)
+			    int firstLine = receivedLines.length - 1 - 1;
+			    int message = 0;
+
+			    while (firstLine >= 0 && message < f.getLinesBefore() && receivedLines.length > 1)
 			    {
-				if (i == f.getLinesBefore() && receivedLines.length - 1 - i < 0)
+				// Verify if the line matches "YYYY.MM.DD .................."
+				if (receivedLines[firstLine].matches("^.*[0-9]{4}\\.(3[01]|[12][0-9]|0[1-9])\\.(1[0-2]|0[1-9])\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$"))
 				{
-				    i += receivedLines.length - 1 - i;
+				    // Increment the number of messages found
+				    ++message;
 				}
 
-				finalMessage.append(receivedLines[(receivedLines.length - 1) - i]);
+				// change line
+				--firstLine;
+			    }
+
+			    // cancel out the last -- of the while
+			    ++firstLine;
+
+			    while (firstLine < receivedLines.length - 1)
+			    {
+				// Append the line with the actual keyword
+				finalMessage.append(receivedLines[firstLine++]);
 				finalMessage.append("\n");
 			    }
 
 			    // Append the line with the actual keyword
 			    finalMessage.append(receivedLines[receivedLines.length - 1]);
 
-			    int numLinesAfter = f.getLineAfter();
-			    // Wait for the number of lines after (as well as the current line which contained the keyword)
-			    for (int i = 0; i < numLinesAfter + 1; ++i)
+			    int numMessagesAfter = f.getMessagesAfter();
+			    boolean matchFound = false;
+			    // Wait for the number of messages after, as well as
+			    // the current line which contained the keyword,
+			    // hence the + 1
+			    for (int i = 0; i < numMessagesAfter + 1; ++i)
 			    {
 				StringBuilder receivedLinesAfter = new StringBuilder();
 
 				do
 				{
+				    // Read the next character
 				    receivedLinesAfter.append((char) in.read());
 
 				    // Rerun all the filters for the lines after our found keyword
-				    int maxNumLinesAfter = 0;
 				    for (Filter filter : filterMap.values())
 				    {
 					if (receivedLinesAfter.toString().toLowerCase().endsWith(filter.getKeyword()))
 					{
-					    // X lines before are already done, so
-					    // we just reset the counter for the lines
-					    // after the keyword so that it does Y
-					    // lines after this new detection
-					    i = 0;
-
-					    if (filter.getLineAfter() > maxNumLinesAfter)
+					    if (filter.getMessagesAfter() > numMessagesAfter - i)
 					    {
-						numLinesAfter = filter.getLineAfter();
-						maxNumLinesAfter = numLinesAfter;
+						// X lines before are already done, so
+						// we just reset the counter for the lines
+						// after the keyword so that it does Y
+						// lines after this new detection
+						i = 0;
+						numMessagesAfter = filter.getMessagesAfter();
 					    }
 					}
 				    }
-				}
-				while (!receivedLinesAfter.toString().endsWith("\n"));
 
-				finalMessage.append(receivedLinesAfter);
+				    // Look for the header of the next message
+				    for (String s : receivedLinesAfter.toString().split("\\n"))
+				    {
+					if (s.matches("^.*[0-9]{4}\\.(3[01]|[12][0-9]|0[1-9])\\.(1[0-2]|0[1-9])\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$"))
+					{
+					    matchFound = true;
+					}
+				    }
+				} while (!matchFound);
+
+				matchFound = false;
+
+				// If this is not the last message
+				if (i != numMessagesAfter)
+				{
+				    // We simply append the message
+				    // including the header of the next message
+				    finalMessage.append(receivedLinesAfter);
+				}
+				else // This is the last message
+				{
+				    String[] splitMessage = receivedLinesAfter.toString().split("\\n");
+				    for (String s : splitMessage)
+				    {
+					// If it isn't the header of the next
+					// message
+					if (!s.matches("^.*[0-9]{4}\\.(3[01]|[12][0-9]|0[1-9])\\.(1[0-2]|0[1-9])\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$"))
+					{
+					    // Display it for the current loop
+					    finalMessage.append(s);
+					    finalMessage.append("\n");
+					}
+					else // This is the header of the next message
+					{
+					    // Save it for the next iteration!
+					    savedBuffer = s;
+					}
+				    }
+				}
 
 				// NEVERMIND, this is bad, because we will have
 				// issues with prints from one server occuring
@@ -236,6 +313,7 @@ public class RemoteConsumer extends Thread
 		    }
 		}
 
+		// Make sure we haven't reached the buffer limit yet
 		if (charCounter == MAX_CHAR_BUFF)
 		{
 		    return "";
@@ -250,6 +328,12 @@ public class RemoteConsumer extends Thread
 	return null;
     }
 
+    /**
+     * This function generates a banner for a message containing information
+     * about the monitored server as well as the monitored log file
+     *
+     * @return The banner in the form of a string
+     */
     private String addServerBanner()
     {
 	StringBuilder sb = new StringBuilder();
@@ -262,6 +346,10 @@ public class RemoteConsumer extends Thread
 	return sb.toString();
     }
 
+    /**
+     * This function will ensure we are using the right session for the
+     * monitoring connection
+     */
     protected void ensureConnection()
     {
 	monitoringSession = monitoringConnection.getSession();
@@ -276,7 +364,9 @@ public class RemoteConsumer extends Thread
     {
 	ensureConnection();
 
-	monitoringSession.execCommand("ls -rt " + logName + "* | tail -1");
+	Log log = Preferences.getInstance().getLog(logName);
+
+	monitoringSession.execCommand("ls -rt " + log.getFilePath() + " | grep " + log.getNamePrefix() + "* | tail -1");
 
 	StringBuilder sb = new StringBuilder();
 	// Receive the answer
@@ -302,18 +392,19 @@ public class RemoteConsumer extends Thread
 	return sb.toString();
     }
 
-    // TODO: create subclass that will extend TimerTask
-    // Initialise it this way:
-//    OfflineStateManager stateManagerThread = new OfflineStateManager();
-//    Timer stateTimer = new Timer(true);
-//    stateTimer.scheduleAtFixedRate(stateManagerThread, 4000, 4000);
-    private class UpdaterDaemon extends TimerTask
+    /**
+     * This updater Daemon will look for a newer version of the log file we are
+     * monitoring in order to restart the connection.
+     */
+    public class UpdaterDaemon extends TimerTask
     {
 	@Override
 	public void run()
 	{
-	    if (!currentFileName.equals(getFileName()))
+	    String newFileName = getFileName();
+	    if (!currentFileName.equals(newFileName))
 	    {
+		writeToConsole("\n\n[INFO] Monitoring log file updated on " + serverName + ": " + newFileName + "\n\n");
 		ConnectionManager.getInstance().restartConnection(serverName, logName);
 	    }
 	}

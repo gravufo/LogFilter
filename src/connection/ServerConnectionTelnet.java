@@ -63,10 +63,9 @@ public class ServerConnectionTelnet extends ServerConnection
 	if (!sessionActive)
 	{
 	    sessionActive = true;
-	    return session;
 	}
 
-	return null;
+	return session;
     }
 
     @Override

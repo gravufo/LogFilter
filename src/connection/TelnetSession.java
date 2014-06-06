@@ -1,7 +1,10 @@
 package connection;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.net.telnet.TelnetClient;
 
 /**
@@ -30,7 +33,7 @@ public class TelnetSession extends Session
     public void closeSession()
     {
 	// Do nothing since Telnet does not have any sessions
-	printStream.close();
+//	printStream.close();
     }
 
     @Override
@@ -38,6 +41,24 @@ public class TelnetSession extends Session
     {
 	printStream.println(cmd);
 	printStream.flush();
+
+	StringBuilder sb = new StringBuilder();
+	while (true)
+	{
+	    try
+	    {
+		sb.append((char) session.getInputStream().read());
+
+		if (sb.toString().endsWith("\n"))
+		{
+		    break;
+		}
+	    }
+	    catch (IOException ex)
+	    {
+		Logger.getLogger(TelnetSession.class.getName()).log(Level.SEVERE, null, ex);
+	    }
+	}
     }
 
     public void setOutputStream(OutputStream outputStream)

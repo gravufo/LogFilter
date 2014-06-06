@@ -29,6 +29,8 @@ public class RemoteConsumerTelnet extends RemoteConsumer
     @Override
     protected void initialise()
     {
+	super.initialise();
+
 	monitoringConnection = new ServerConnectionTelnet(Preferences.getInstance().getServer(serverName).getHostname(), Preferences.getInstance().getServerAccount());
 	monitoringConnection.connect();
 	monitoringSession = monitoringConnection.getSession();

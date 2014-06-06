@@ -61,6 +61,21 @@ public class Log implements Serializable
 	return filterMap;
     }
 
+    public Map<String, Filter> getEnabledFilters()
+    {
+	Map<String, Filter> enabledFilters = new HashMap<>();
+
+	for (Map.Entry<String, Filter> entry : filterMap.entrySet())
+	{
+	    if (entry.getValue().isEnabled())
+	    {
+		enabledFilters.put(entry.getKey(), entry.getValue());
+	    }
+	}
+
+	return enabledFilters;
+    }
+
     public String getName()
     {
 	return name;

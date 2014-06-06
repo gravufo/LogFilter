@@ -68,7 +68,7 @@ public class Filter implements Serializable
 	this.linesBefore = linesBefore;
     }
 
-    public int getLineAfter()
+    public int getMessagesAfter()
     {
 	return lineAfter;
     }

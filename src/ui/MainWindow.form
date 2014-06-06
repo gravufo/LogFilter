@@ -118,9 +118,11 @@
                       <Group type="102" attributes="0">
                           <Component id="jLabelServersToMonitor" min="-2" max="-2" attributes="0"/>
                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                          <Component id="jTextFieldServersToMonitor" pref="383" max="32767" attributes="0"/>
-                          <EmptySpace type="separate" max="-2" attributes="0"/>
-                          <Component id="jButtonConnect" min="-2" pref="93" max="-2" attributes="0"/>
+                          <Component id="jTextFieldServersToMonitor" pref="316" max="32767" attributes="0"/>
+                          <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                          <Component id="jButtonConnect" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                          <Component id="jButtonDisconnect" min="-2" max="-2" attributes="0"/>
                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
                           <Component id="jButtonRefresh" min="-2" max="-2" attributes="0"/>
                       </Group>
@@ -139,6 +141,7 @@
                           <Component id="jButtonConnect" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabelServersToMonitor" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jTextFieldServersToMonitor" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jButtonDisconnect" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <Component id="jButtonRefresh" pref="0" max="32767" attributes="0"/>
                   </Group>
@@ -212,6 +215,15 @@
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButtonRefreshActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JButton" name="jButtonDisconnect">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Disconnect"/>
+            <Property name="enabled" type="boolean" value="false"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButtonDisconnectActionPerformed"/>
           </Events>
         </Component>
       </SubComponents>

@@ -33,6 +33,8 @@ public class RemoteConsumerSSH extends RemoteConsumer
     @Override
     protected void initialise()
     {
+	super.initialise();
+
 	monitoringConnection = new ServerConnectionSSH(Preferences.getInstance().getServer(serverName).getHostname(), Preferences.getInstance().getServerAccount());
 	monitoringConnection.connect();
     }

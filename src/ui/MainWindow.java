@@ -4,16 +4,32 @@ import collections.Pair;
 import connection.ConnectionManager;
 import connection.RemoteConsumerManager;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BoundedRangeModel;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -55,7 +71,30 @@ public class MainWindow extends JFrame
 	}
 
 	// Set the document filter to limit the number of lines
-	((AbstractDocument) jTextAreaOutput.getDocument()).setDocumentFilter(new ConsoleDocumentFilter(jTextAreaOutput, MAX_LINE_NUM));
+	((AbstractDocument) jTextAreaOutput.getDocument()).setDocumentFilter(new ConsoleDocumentFilter(jTextAreaOutput, Preferences.getInstance().getMaxNumLines()));
+
+	jTextAreaOutput.getDocument().addDocumentListener(new DocumentListener()
+	{
+
+	    @Override
+	    public void insertUpdate(DocumentEvent de)
+	    {
+		if (!isFocused() && Preferences.getInstance().isFlashTaskbar())
+		{
+		    toFront();
+		}
+	    }
+
+	    @Override
+	    public void removeUpdate(DocumentEvent de)
+	    {
+	    }
+
+	    @Override
+	    public void changedUpdate(DocumentEvent de)
+	    {
+	    }
+	});
 
 	// Disable the auto scroll EDIT: Don't, we want to be able to write correctly.
 	((DefaultCaret) jTextAreaOutput.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
@@ -89,6 +128,107 @@ public class MainWindow extends JFrame
 		_max = _model.getMaximum();
 	    }
 	});
+
+	// Set the popup menu for right click on the terminal
+	jPopupTerminal = new JPopupMenu();
+
+	final JMenuItem jMenuSelectAll = new JMenuItem("Select all");
+	final JMenuItem jMenuClear = new JMenuItem("Clear selection");
+	final JMenuItem jMenuCopy = new JMenuItem("Copy");
+	final JMenuItem jMenuPaste = new JMenuItem("Paste");
+
+	jPopupTerminal.addPopupMenuListener(new PopupMenuListener()
+	{
+
+	    @Override
+	    public void popupMenuWillBecomeVisible(PopupMenuEvent pme)
+	    {
+		try
+		{
+		    Clipboard c = Toolkit.getDefaultToolkit().getSystemClipboard();
+		    Transferable t = c.getContents(null);
+		    Object o = t.getTransferData(DataFlavor.stringFlavor);
+		    String data = (String) t.getTransferData(DataFlavor.stringFlavor);
+
+		    if (data == null || data.isEmpty())
+		    {
+			jMenuPaste.setEnabled(false);
+		    }
+		    else
+		    {
+			jMenuPaste.setEnabled(true);
+		    }
+		}
+		catch (UnsupportedFlavorException | IOException ex)
+		{
+		    Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+		}
+
+		if (jTextAreaOutput.getSelectedText() == null || jTextAreaOutput.getSelectedText().isEmpty())
+		{
+		    jMenuClear.setText("Clear screen");
+		    jMenuCopy.setEnabled(false);
+		}
+		else
+		{
+		    jMenuClear.setText("Clear selection");
+		    jMenuCopy.setEnabled(true);
+		}
+	    }
+
+	    @Override
+	    public void popupMenuWillBecomeInvisible(PopupMenuEvent pme)
+	    {
+	    }
+
+	    @Override
+	    public void popupMenuCanceled(PopupMenuEvent pme)
+	    {
+	    }
+	});
+
+	jMenuSelectAll.addActionListener(new ActionListener()
+	{
+	    @Override
+	    public void actionPerformed(ActionEvent ae)
+	    {
+		selectAll();
+	    }
+	});
+
+	jMenuClear.addActionListener(new ActionListener()
+	{
+	    @Override
+	    public void actionPerformed(ActionEvent ae)
+	    {
+		clearSelection();
+	    }
+	});
+
+	jMenuCopy.addActionListener(new ActionListener()
+	{
+	    @Override
+	    public void actionPerformed(ActionEvent ae)
+	    {
+		copy();
+	    }
+	});
+
+	jMenuPaste.addActionListener(new ActionListener()
+	{
+	    @Override
+	    public void actionPerformed(ActionEvent ae)
+	    {
+		paste();
+	    }
+	});
+
+	jPopupTerminal.add(jMenuSelectAll);
+	jPopupTerminal.add(jMenuClear);
+	jPopupTerminal.add(jMenuCopy);
+	jPopupTerminal.add(jMenuPaste);
+
+	jTextAreaOutput.setComponentPopupMenu(jPopupTerminal);
 
 	// Remove Java icon in title bar and place a crappy looking custom one
 	ImageIcon img = new ImageIcon(getClass().getResource("/images/Log_icon.png"));
@@ -143,16 +283,150 @@ public class MainWindow extends JFrame
 
 	    jButtonConnect.setEnabled(true);
 	}
+
+	// Update the maximum number of lines from the prefs in case it changed
+	((AbstractDocument) jTextAreaOutput.getDocument()).setDocumentFilter(new ConsoleDocumentFilter(jTextAreaOutput, Preferences.getInstance().getMaxNumLines()));
+
+	jTextAreaOutput.setFont(Preferences.getInstance().getTerminalFont());
+	jTextAreaOutput.setForeground(Preferences.getInstance().getForegroundColor());
+	jTextAreaOutput.setBackground(Preferences.getInstance().getBackgroundColor());
     }
 
     private void terminationCleanup()
     {
+	(new Thread()
+	{
+	    @Override
+	    public void run()
+	    {
+		connectionManager.removeConnections();
+	    }
+	}).start();
+
 	// No need to cancel, since no prefs have been modified if we're here
 	//
 	// For consistency, we save window location and size
 	Preferences.getInstance().setUIPreference(id, bounds, getExtendedState());
 
 	Preferences.getInstance().save();
+    }
+
+    private void selectAll()
+    {
+	jTextAreaOutput.setSelectionStart(0);
+	jTextAreaOutput.setSelectionEnd(jTextAreaOutput.getText().length());
+    }
+
+    private void clearSelection()
+    {
+	if (jTextAreaOutput.getSelectedText() == null)
+	{
+	    jTextAreaOutput.setText("");
+	    jTextAreaOutput.setSelectionStart(0);
+	    jTextAreaOutput.setSelectionEnd(0);
+	}
+	else
+	{
+	    jTextAreaOutput.replaceSelection("");
+	    jTextAreaOutput.setSelectionStart(jTextAreaOutput.getCaretPosition());
+	    jTextAreaOutput.setSelectionEnd(jTextAreaOutput.getCaretPosition());
+	}
+    }
+
+    private void copy()
+    {
+	StringSelection selection = new StringSelection(jTextAreaOutput.getSelectedText());
+	Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+	clipboard.setContents(selection, selection);
+    }
+
+    private void paste()
+    {
+	Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+	Transferable t = clipboard.getContents(null);
+	if (t != null && t.isDataFlavorSupported(DataFlavor.stringFlavor))
+	{
+	    try
+	    {
+		Object o = t.getTransferData(DataFlavor.stringFlavor);
+		if (jTextAreaOutput.getSelectedText() == null || jTextAreaOutput.getSelectedText().isEmpty())
+		{
+		    jTextAreaOutput.insert((String) o, jTextAreaOutput.getCaretPosition());
+		}
+		else
+		{
+		    jTextAreaOutput.replaceSelection((String) o);
+		}
+	    }
+	    catch (UnsupportedFlavorException | IOException ex)
+	    {
+		Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+	    }
+	}
+    }
+
+    private void disconnect()
+    {
+	// Re-enable the connect button if it was disabled
+	if (jButtonDisconnect.isEnabled())
+	{
+	    jButtonConnect.setEnabled(true);
+	    jButtonRefresh.setEnabled(false);
+	    jButtonDisconnect.setEnabled(false);
+	    jTextAreaOutput.append("\n\nDisconnected.\n\n");
+
+	    // Verify if there is a connection alive - kill it if so
+	    connectionManager.removeConnections();
+	    jTextAreaOutput.append("\nMonitoring daemon stopped for:\n");
+	}
+    }
+
+    private void connect()
+    {
+	jButtonConnect.setEnabled(false);
+	jButtonRefresh.setEnabled(true);
+	jButtonDisconnect.setEnabled(true);
+
+	jTextAreaOutput.append("\nInitiating connections...\n");
+
+	new Thread()
+	{
+	    @Override
+	    public void run()
+	    {
+		if (connectionManager.startConnections())
+		{
+		    SwingUtilities.invokeLater(new Runnable()
+		    {
+			@Override
+			public void run()
+			{
+			    jTextAreaOutput.append("Connections successful!\n");
+
+			    jTextAreaOutput.append("Starting monitoring daemons...\n\n");
+
+			    jTextAreaOutput.append("Monitoring daemon started for:\n");
+			}
+		    });
+
+		    connectionManager.executeCommands();
+		}
+		else
+		{
+		    SwingUtilities.invokeLater(new Runnable()
+		    {
+			@Override
+			public void run()
+			{
+			    jTextAreaOutput.append("Connections failed...aborting\n\n");
+			}
+		    });
+
+		    connectionManager.removeConnections();
+		    connectionManager.addConnections(serverList, Preferences.getInstance().getServerAccount());
+		}
+	    }
+	}.start();
     }
 
     /**
@@ -173,6 +447,7 @@ public class MainWindow extends JFrame
         jLabelServersToMonitor = new javax.swing.JLabel();
         jTextFieldServersToMonitor = new javax.swing.JTextField();
         jButtonRefresh = new javax.swing.JButton();
+        jButtonDisconnect = new javax.swing.JButton();
         jMenuBarMain = new javax.swing.JMenuBar();
         jMenuFile = new javax.swing.JMenu();
         jMenuItemExit = new javax.swing.JMenuItem();
@@ -248,6 +523,16 @@ public class MainWindow extends JFrame
             }
         });
 
+        jButtonDisconnect.setText("Disconnect");
+        jButtonDisconnect.setEnabled(false);
+        jButtonDisconnect.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonDisconnectActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanelRootLayout = new javax.swing.GroupLayout(jPanelRoot);
         jPanelRoot.setLayout(jPanelRootLayout);
         jPanelRootLayout.setHorizontalGroup(
@@ -258,9 +543,11 @@ public class MainWindow extends JFrame
                     .addGroup(jPanelRootLayout.createSequentialGroup()
                         .addComponent(jLabelServersToMonitor)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jTextFieldServersToMonitor, javax.swing.GroupLayout.DEFAULT_SIZE, 383, Short.MAX_VALUE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jButtonConnect, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jTextFieldServersToMonitor, javax.swing.GroupLayout.DEFAULT_SIZE, 316, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jButtonConnect)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jButtonDisconnect)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jButtonRefresh))
                     .addComponent(jScrollPaneOutputText))
@@ -274,7 +561,8 @@ public class MainWindow extends JFrame
                     .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jButtonConnect)
                         .addComponent(jLabelServersToMonitor)
-                        .addComponent(jTextFieldServersToMonitor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jTextFieldServersToMonitor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jButtonDisconnect))
                     .addComponent(jButtonRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPaneOutputText, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
@@ -348,26 +636,11 @@ public class MainWindow extends JFrame
 
     private void jMenuItemPreferencesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemPreferencesActionPerformed
     {//GEN-HEADEREND:event_jMenuItemPreferencesActionPerformed
-	// Verify if there is a connection alive - kill it if so
-	connectionManager.removeConnections();
+	disconnect();
 
-	// Re-enable the connect button if it was disabled
-	if (!jButtonConnect.isEnabled())
-	{
-	    jButtonConnect.setEnabled(true);
-	    jButtonRefresh.setEnabled(false);
-	}
 	new PreferencesDialog(MainWindow.this, true).showDialog();
-	loadProperties();
 
-//	new Thread()
-//	{
-//	    @Override
-//	    public void run()
-//	    {
-//		new PreferencesWindow().setVisible(true);
-//	    }
-//	}.start();
+	loadProperties();
     }//GEN-LAST:event_jMenuItemPreferencesActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt)//GEN-FIRST:event_formWindowClosing
@@ -377,18 +650,7 @@ public class MainWindow extends JFrame
 
     private void jButtonConnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonConnectActionPerformed
     {//GEN-HEADEREND:event_jButtonConnectActionPerformed
-	jButtonConnect.setEnabled(false);
-	jButtonRefresh.setEnabled(true);
-
-	new Thread()
-	{
-	    @Override
-	    public void run()
-	    {
-		connectionManager.startConnections();
-		connectionManager.executeCommands();
-	    }
-	}.start();
+	connect();
     }//GEN-LAST:event_jButtonConnectActionPerformed
 
     private void jButtonRefreshActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRefreshActionPerformed
@@ -424,6 +686,11 @@ public class MainWindow extends JFrame
 	DefaultCaret caret = (DefaultCaret) jTextAreaOutput.getCaret();
 	caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
     }//GEN-LAST:event_jTextAreaOutputKeyTyped
+
+    private void jButtonDisconnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonDisconnectActionPerformed
+    {//GEN-HEADEREND:event_jButtonDisconnectActionPerformed
+        disconnect();
+    }//GEN-LAST:event_jButtonDisconnectActionPerformed
 
     /**
      * This class represents a filter for the number of lines to display in the
@@ -478,6 +745,7 @@ public class MainWindow extends JFrame
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonConnect;
+    private javax.swing.JButton jButtonDisconnect;
     private javax.swing.JButton jButtonRefresh;
     private javax.swing.JLabel jLabelServersToMonitor;
     private javax.swing.JMenuBar jMenuBarMain;
@@ -497,5 +765,5 @@ public class MainWindow extends JFrame
     private ArrayList<Server> serverList;
     private ConnectionManager connectionManager;
     private Rectangle bounds;
-    private final int MAX_LINE_NUM = 30000;
+    private JPopupMenu jPopupTerminal;
 }
