@@ -1,7 +1,11 @@
 package connection;
 
-import ch.ethz.ssh2.StreamGobbler;
-import javax.swing.JTextArea;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JTextPane;
 import persistence.Preferences;
 
 /**
@@ -21,13 +25,20 @@ public class RemoteConsumerSSH extends RemoteConsumer
      * @param serverName The name of the server we are monitoring
      * @param logName    The name of the log we are monitoring
      */
-    public RemoteConsumerSSH(JTextArea console, Session session, String serverName, String logName)
+    public RemoteConsumerSSH(JTextPane console, Session session, String serverName, String logName)
     {
 	super(console, serverName, logName);
 
-	in = new StreamGobbler(((SSHSession) session).getSession().getStdout());
+	try
+	{
+	    in = new BufferedReader(new InputStreamReader(((SSHSession) session).getSession().getInputStream()));
 
-	//err = new StreamGobbler(((SSHSession) session).getSession().getStderr());
+	    //err = new StreamGobbler(((SSHSession) session).getSession().getStderr());
+	}
+	catch (IOException ex)
+	{
+	    Logger.getLogger(RemoteConsumerSSH.class.getName()).log(Level.SEVERE, null, ex);
+	}
     }
 
     @Override
@@ -44,7 +55,14 @@ public class RemoteConsumerSSH extends RemoteConsumer
     {
 	super.ensureConnection();
 
-	monitoringIn = ((SSHSession) monitoringSession).getSession().getStdout();
+	try
+	{
+	    monitoringIn = ((SSHSession) monitoringSession).getSession().getInputStream();
+	}
+	catch (IOException ex)
+	{
+	    Logger.getLogger(RemoteConsumerSSH.class.getName()).log(Level.SEVERE, null, ex);
+	}
     }
 
     @Override

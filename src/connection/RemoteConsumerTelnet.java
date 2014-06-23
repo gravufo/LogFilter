@@ -1,7 +1,8 @@
 package connection;
 
-import ch.ethz.ssh2.StreamGobbler;
-import javax.swing.JTextArea;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import javax.swing.JTextPane;
 import persistence.Preferences;
 
 /**
@@ -19,11 +20,11 @@ public class RemoteConsumerTelnet extends RemoteConsumer
      * @param serverName The name of the server we are monitoring
      * @param logName    The name of the log we are monitoring
      */
-    public RemoteConsumerTelnet(JTextArea console, Session session, String serverName, String logName)
+    public RemoteConsumerTelnet(JTextPane console, Session session, String serverName, String logName)
     {
 	super(console, serverName, logName);
 
-	in = new StreamGobbler(((TelnetSession) session).getSession().getInputStream());
+	in = new BufferedReader(new InputStreamReader(((TelnetSession) session).getSession().getInputStream()));
     }
 
     @Override
@@ -34,6 +35,14 @@ public class RemoteConsumerTelnet extends RemoteConsumer
 	monitoringConnection = new ServerConnectionTelnet(Preferences.getInstance().getServer(serverName).getHostname(), Preferences.getInstance().getServerAccount());
 	monitoringConnection.connect();
 	monitoringSession = monitoringConnection.getSession();
+	monitoringIn = ((TelnetSession) monitoringSession).getSession().getInputStream();
+    }
+
+    @Override
+    protected void ensureConnection()
+    {
+	super.ensureConnection();
+
 	monitoringIn = ((TelnetSession) monitoringSession).getSession().getInputStream();
     }
 }

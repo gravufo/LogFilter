@@ -4,9 +4,12 @@ import collections.Pair;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Rectangle;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -14,6 +17,9 @@ import java.net.PasswordAuthentication;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import logfilter.Log;
 import logfilter.Server;
 
@@ -46,6 +52,10 @@ public class Preferences implements Serializable
 
 	maxNumLines = 30000;
 	flashTaskbar = true;
+	refreshInterval = 15;
+
+	outputToDisk = false;
+	logPath = "logs/";
 
 	// Set the default green on black colors
 	backgroundColor = new Color(0, 0, 0);
@@ -85,10 +95,10 @@ public class Preferences implements Serializable
 	defaultLog.setNamePrefix("EmsBeLog");
 	logMap.put("EMS-EmsBeLog", defaultLog);
 
-	defaultLog = new Log("EMS-EmsbeOutput");
+	defaultLog = new Log("EMS-emsbeOutput");
 	defaultLog.setFilePath("/var/broadworks/logs/emsBackEnd/");
-	defaultLog.setNamePrefix("EmsbeOutput");
-	logMap.put("EMS-EmsbeOutput", defaultLog);
+	defaultLog.setNamePrefix("emsbeOutput");
+	logMap.put("EMS-emsbeOutput", defaultLog);
 
 	/**
 	 * MEDIA SERVER LOGS
@@ -125,6 +135,11 @@ public class Preferences implements Serializable
 	defaultLog.setFilePath("/var/broadworks/logs/routingserver/");
 	defaultLog.setNamePrefix("NSXSOutput");
 	logMap.put("NS-XSOutput", defaultLog);
+
+	defaultLog = new Log("NS-NSPortalLog");
+	defaultLog.setFilePath("/var/broadworks/logs/nsportal/");
+	defaultLog.setNamePrefix("NSPortalLog");
+	logMap.put("NS-NSPortalLog", defaultLog);
 
 	/**
 	 * PROFILE SERVER LOGS
@@ -191,8 +206,22 @@ public class Preferences implements Serializable
     private Preferences(Preferences preferences)
     {
 	uIPreferences = new HashMap<>(preferences.uIPreferences);
-	serverMap = new HashMap<>(preferences.serverMap);
-	logMap = new HashMap<>(preferences.logMap);
+
+	serverMap = new HashMap<>();
+
+	for (Server s : preferences.serverMap.values())
+	{
+	    Server newServer = new Server(s);
+	    serverMap.put(newServer.getName(), newServer);
+	}
+
+	logMap = new HashMap<>();
+
+	for (Log log : preferences.logMap.values())
+	{
+	    Log newLog = new Log(log);
+	    logMap.put(newLog.getName(), newLog);
+	}
 	
 	serverUsername = preferences.serverUsername;
 	serverPassword = preferences.serverPassword;
@@ -203,6 +232,10 @@ public class Preferences implements Serializable
 	backgroundColor = preferences.backgroundColor;
 
 	terminalFont = preferences.terminalFont;
+	refreshInterval = preferences.refreshInterval;
+
+	outputToDisk = preferences.outputToDisk;
+	logPath = preferences.logPath;
     }
 
     /**
@@ -235,22 +268,29 @@ public class Preferences implements Serializable
      */
     public void save()
     {
+	FileOutputStream fos = null;
+
 	try
 	{
-	    FileOutputStream fos = new FileOutputStream(fileName);
-
-	    // TODO: Save every modification we did to the right instance
+	    fos = new FileOutputStream(fileName);
 	    try (ObjectOutputStream oos = new ObjectOutputStream(fos))
 	    {
-		// TODO: Save every modification we did to the right instance
+		// Save every modification we did to the right instance
 		savedInstance = new Preferences(instance);
-		
 		// Écrit toute l'instance (incluant ses attributs publics/privés)
 		oos.writeObject(savedInstance);
+
+		oos.close();
 	    }
+
+	    fos.close();
 	}
-	catch (IOException e)
+	catch (FileNotFoundException ex)
 	{
+	}
+	catch (IOException ex)
+	{
+	    Logger.getLogger(Preferences.class.getName()).log(Level.SEVERE, null, ex);
 	}
     }
 
@@ -271,17 +311,42 @@ public class Preferences implements Serializable
      */
     private static void load()
     {
+	FileInputStream fis;
+	ObjectInputStream ois;
 	try
 	{
-	    FileInputStream fis = new FileInputStream(fileName);
+	    fis = new FileInputStream(fileName);
 
-	    try (ObjectInputStream ois = new ObjectInputStream(fis))
+	    ois = new ObjectInputStream(fis);
+	    Preferences.instance = new Preferences((Preferences) ois.readObject());
+
+	    ois.close();
+
+	    fis.close();
+	}
+	catch (InvalidClassException ex)
+	{
+	    int choice = JOptionPane.showConfirmDialog(null, "Old preference file detected. Click yes to open the program with new default preferences, or cancel to abort.");
+
+	    if (choice == JOptionPane.YES_OPTION)
 	    {
-		Preferences.instance = new Preferences((Preferences) ois.readObject());
+		File oldPref = new File("preferences.ser");
+
+		oldPref.delete();
+
+		instance = null;
+	    }
+	    else
+	    {
+		System.exit(-1);
 	    }
 	}
-	catch (IOException | ClassNotFoundException e)
+	catch (FileNotFoundException ex)
 	{
+	}
+	catch (IOException | ClassNotFoundException ex)
+	{
+	    Logger.getLogger(Preferences.class.getName()).log(Level.SEVERE, null, ex);
 	}
     }
 
@@ -414,6 +479,35 @@ public class Preferences implements Serializable
 	instance.terminalFont = terminalFont;
     }
 
+    public int getRefreshInterval()
+    {
+	return refreshInterval;
+    }
+
+    public void setRefreshInterval(int refreshInterval)
+    {
+	this.refreshInterval = refreshInterval;
+    }
+
+    public boolean isOutputToDisk()
+    {
+	return outputToDisk;
+    }
+
+    public void setOutputToDisk(boolean outputToDisk)
+    {
+	this.outputToDisk = outputToDisk;
+    }
+
+    public String getLogPath()
+    {
+	return logPath;
+    }
+
+    public void setLogPath(String logPath)
+    {
+	this.logPath = logPath;
+    }
 
     /**
      * Active instance of this class
@@ -481,4 +575,19 @@ public class Preferences implements Serializable
      * Font of the text displayed in the terminal
      */
     private Font terminalFont;
+
+    /**
+     * Interval (in seconds) at which to check for a new version of the log
+     */
+    private int refreshInterval;
+
+    /**
+     * True if the user wants to output terminal text to a log file on disk
+     */
+    private boolean outputToDisk;
+
+    /**
+     * The path of the log files that will be created (relative path)
+     */
+    private String logPath;
 }

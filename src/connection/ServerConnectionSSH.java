@@ -1,9 +1,11 @@
 package connection;
 
-import ch.ethz.ssh2.Connection;
-import java.io.IOException;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.UserInfo;
 import java.net.PasswordAuthentication;
-import javax.swing.JOptionPane;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import ui.MainWindow;
 
 /**
@@ -13,7 +15,7 @@ import ui.MainWindow;
  */
 public class ServerConnectionSSH extends ServerConnection
 {
-    private Connection connection;
+    private com.jcraft.jsch.Session connection;
 
     /**
      * Constructor
@@ -31,14 +33,12 @@ public class ServerConnectionSSH extends ServerConnection
     {
 	if (!connected)
 	{
-	    connection = new Connection(hostname);
-
 	    try
 	    {
 		/*
 		 * CONNECTION PHASE
 		 */
-		connection.connect();
+		connection = new JSch().getSession(account.getUserName(), hostname, 22);
 
 		/*
 		 * AUTHENTICATION PHASE
@@ -46,27 +46,33 @@ public class ServerConnectionSSH extends ServerConnection
 		 * Here, we are just using Username/Password authentication with
 		 * absolutely no certificate verification or other type of auth.
 		 */
-		boolean res = connection.authenticateWithPassword(account.getUserName(), new String(account.getPassword()));
-
-		if (res == false)
-		{
-		    System.out.println("The username or password is incorrect");
-
-		    // User must change prefs, so we just cancel
-		    closeConnection();
-		    return false;
-		}
+		MyUserInfo ui = new MyUserInfo();
+		ui.setPassword(account.getPassword());
+		connection.setUserInfo(ui);
+		connection.connect();
 
 		/*
 		 * AUTHENTICATION SUCCESSFUL
 		 */
 	    }
-	    catch (IOException e)
+	    catch (JSchException e)
 	    {
-		JOptionPane.showMessageDialog(MainWindow.getFrames()[0], "Exception: " + e.getMessage());
+		if (e.getMessage().contains("denied"))
+		{
+		    MainWindow.writeToConsole("The username or password is incorrect\n");
+
+		    // User must change prefs, so we just cancel
+		    closeConnection();
+		}
+		else
+		{
+		    MainWindow.writeToConsole(hostname + ": Connection failed. Host not found or connection refused.\n");
+		}
+
 		return false;
 	    }
 	}
+
 	return connected = true;
     }
 
@@ -88,9 +94,9 @@ public class ServerConnectionSSH extends ServerConnection
 		session = new SSHSession(connection);
 		sessionActive = true;
 	    }
-	    catch (IOException e)
+	    catch (JSchException ex)
 	    {
-		JOptionPane.showMessageDialog(MainWindow.getFrames()[0], "Exception: " + e.getMessage());
+		Logger.getLogger(ServerConnectionSSH.class.getName()).log(Level.SEVERE, null, ex);
 	    }
 	}
 
@@ -124,8 +130,53 @@ public class ServerConnectionSSH extends ServerConnection
 	 */
 	if (connected)
 	{
-	    connection.close();
 	    connected = false;
+	    connection.disconnect();
+	}
+    }
+
+    public static class MyUserInfo implements UserInfo
+    {
+	@Override
+	public String getPassword()
+	{
+	    return new String(passwd);
+	}
+
+	public void setPassword(char[] password)
+	{
+	    passwd = password;
+	}
+
+	@Override
+	public boolean promptYesNo(String str)
+	{
+	    return true;
+	}
+
+	char[] passwd;
+
+	@Override
+	public String getPassphrase()
+	{
+	    return new String(passwd);
+	}
+
+	@Override
+	public boolean promptPassword(String string)
+	{
+	    return true;
+	}
+
+	@Override
+	public boolean promptPassphrase(String string)
+	{
+	    return true;
+	}
+
+	@Override
+	public void showMessage(String string)
+	{
 	}
     }
 }

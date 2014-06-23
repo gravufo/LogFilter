@@ -3,8 +3,14 @@ package ui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.TreeSet;
+import javax.swing.DefaultListModel;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
@@ -19,19 +25,41 @@ public class ServerDialog extends javax.swing.JDialog
     /**
      * Creates new Add/Edit Server dialog
      *
-     * @param parent   Parent component
-     * @param modal    Modality of this dialog
-     * @param isEdit   True if this is a server edit, false otherwise
-     * @param name     The name of the server to edit, if isEdit is true
-     * @param hostname The hostname of the server to edit, if isEdit is true
+     * @param parent            Parent component
+     * @param modal             Modality of this dialog
+     * @param isEdit            True if this is a server edit, false otherwise
+     * @param name              The name of the server to edit, if isEdit is
+     *                          true
+     * @param hostname          The hostname of the server to edit, if isEdit is
+     *                          true
+     * @param availableLogFiles The list of all the template log files
+     * @param enabledLogFiles   The list of already assigned log files
      */
-    public ServerDialog(JDialog parent, boolean modal, boolean isEdit, String name, String hostname)
+    public ServerDialog(JDialog parent, boolean modal, boolean isEdit, String name, String hostname, Enumeration<String> availableLogFiles, Enumeration<String> enabledLogFiles)
     {
 	super(parent, modal);
 	initComponents();
 
+	modelAvailableLogFiles = new DefaultListModel();
+	modelEnabledLogFiles = new DefaultListModel();
+
+	jListAvailableLogFiles.setModel(modelAvailableLogFiles);
+	jListEnabledLogFiles.setModel(modelEnabledLogFiles);
+
+	while (availableLogFiles.hasMoreElements())
+	{
+	    modelAvailableLogFiles.addElement(availableLogFiles.nextElement());
+	}
+
 	if (isEdit)
 	{
+	    while (enabledLogFiles.hasMoreElements())
+	    {
+		String s = enabledLogFiles.nextElement();
+		modelEnabledLogFiles.addElement(s);
+		modelAvailableLogFiles.removeElement(s);
+	    }
+
 	    jTextFieldServerName.setText(name);
 	    jTextFieldHostname.setText(hostname);
 	}
@@ -69,6 +97,14 @@ public class ServerDialog extends javax.swing.JDialog
         jButtonCancel = new javax.swing.JButton();
         jLabelServerName = new javax.swing.JLabel();
         jTextFieldServerName = new javax.swing.JTextField();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jListAvailableLogFiles = new javax.swing.JList();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jListEnabledLogFiles = new javax.swing.JList();
+        jButtonAddLogFile = new javax.swing.JButton();
+        jButtonRemoveLogFile = new javax.swing.JButton();
+        jLabelAvailableLogFiles = new javax.swing.JLabel();
+        jLabelEnabledLogFiles = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("New Server");
@@ -102,7 +138,7 @@ public class ServerDialog extends javax.swing.JDialog
             }
         });
 
-        jLabelServerName.setText("Server name:");
+        jLabelServerName.setText("Profile name:");
 
         jTextFieldServerName.requestFocus();
         jTextFieldServerName.addKeyListener(new java.awt.event.KeyAdapter()
@@ -113,6 +149,54 @@ public class ServerDialog extends javax.swing.JDialog
             }
         });
 
+        jScrollPane1.setFocusable(false);
+
+        jListAvailableLogFiles.addListSelectionListener(new javax.swing.event.ListSelectionListener()
+        {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt)
+            {
+                jListAvailableLogFilesValueChanged(evt);
+            }
+        });
+        jScrollPane1.setViewportView(jListAvailableLogFiles);
+
+        jScrollPane2.setFocusable(false);
+
+        jListEnabledLogFiles.addListSelectionListener(new javax.swing.event.ListSelectionListener()
+        {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt)
+            {
+                jListEnabledLogFilesValueChanged(evt);
+            }
+        });
+        jScrollPane2.setViewportView(jListEnabledLogFiles);
+
+        jButtonAddLogFile.setText(">");
+        jButtonAddLogFile.setEnabled(false);
+        jButtonAddLogFile.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonAddLogFileActionPerformed(evt);
+            }
+        });
+
+        jButtonRemoveLogFile.setText("<");
+        jButtonRemoveLogFile.setEnabled(false);
+        jButtonRemoveLogFile.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonRemoveLogFileActionPerformed(evt);
+            }
+        });
+
+        jLabelAvailableLogFiles.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabelAvailableLogFiles.setText("Available Log Files");
+
+        jLabelEnabledLogFiles.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabelEnabledLogFiles.setText("Monitored Log Files");
+
         javax.swing.GroupLayout jPanelRootLayout = new javax.swing.GroupLayout(jPanelRoot);
         jPanelRoot.setLayout(jPanelRootLayout);
         jPanelRootLayout.setHorizontalGroup(
@@ -121,24 +205,35 @@ public class ServerDialog extends javax.swing.JDialog
                 .addContainerGap()
                 .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanelRootLayout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jButtonOK, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jButtonCancel, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanelRootLayout.createSequentialGroup()
                         .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabelHostname)
                             .addComponent(jLabelServerName))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jTextFieldHostname, javax.swing.GroupLayout.DEFAULT_SIZE, 169, Short.MAX_VALUE)
-                            .addComponent(jTextFieldServerName))))
+                            .addComponent(jTextFieldHostname)
+                            .addComponent(jTextFieldServerName)))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelRootLayout.createSequentialGroup()
+                        .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(jLabelAvailableLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, 170, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jButtonAddLogFile, javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jButtonRemoveLogFile, javax.swing.GroupLayout.Alignment.TRAILING))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addGroup(jPanelRootLayout.createSequentialGroup()
+                                .addComponent(jButtonOK, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jButtonCancel, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(jLabelEnabledLogFiles, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         jPanelRootLayout.setVerticalGroup(
             jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelRootLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap()
                 .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelServerName)
                     .addComponent(jTextFieldServerName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -146,6 +241,22 @@ public class ServerDialog extends javax.swing.JDialog
                 .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelHostname)
                     .addComponent(jTextFieldHostname, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelRootLayout.createSequentialGroup()
+                        .addGap(128, 128, 128)
+                        .addComponent(jButtonAddLogFile)
+                        .addGap(18, 18, 18)
+                        .addComponent(jButtonRemoveLogFile)
+                        .addGap(0, 126, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelRootLayout.createSequentialGroup()
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabelEnabledLogFiles)
+                            .addComponent(jLabelAvailableLogFiles))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 275, Short.MAX_VALUE)
+                            .addComponent(jScrollPane1))))
                 .addGap(18, 18, 18)
                 .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButtonOK)
@@ -193,19 +304,98 @@ public class ServerDialog extends javax.swing.JDialog
 	}
     }//GEN-LAST:event_jTextFieldHostnameKeyPressed
 
+    private void jListAvailableLogFilesValueChanged(javax.swing.event.ListSelectionEvent evt)//GEN-FIRST:event_jListAvailableLogFilesValueChanged
+    {//GEN-HEADEREND:event_jListAvailableLogFilesValueChanged
+	if (jListAvailableLogFiles.getSelectedIndices().length > 0)
+	{
+	    jButtonAddLogFile.setEnabled(true);
+	}
+	else
+	{
+	    jButtonAddLogFile.setEnabled(false);
+	}
+    }//GEN-LAST:event_jListAvailableLogFilesValueChanged
+
+    private void jListEnabledLogFilesValueChanged(javax.swing.event.ListSelectionEvent evt)//GEN-FIRST:event_jListEnabledLogFilesValueChanged
+    {//GEN-HEADEREND:event_jListEnabledLogFilesValueChanged
+	if (jListEnabledLogFiles.getSelectedIndices().length > 0)
+	{
+	    jButtonRemoveLogFile.setEnabled(true);
+	}
+	else
+	{
+	    jButtonRemoveLogFile.setEnabled(false);
+	}
+    }//GEN-LAST:event_jListEnabledLogFilesValueChanged
+
+    private void jButtonAddLogFileActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonAddLogFileActionPerformed
+    {//GEN-HEADEREND:event_jButtonAddLogFileActionPerformed
+	int index = 0;
+
+	if (jListAvailableLogFiles.getSelectedIndices().length == 1)
+	{
+	    index = jListAvailableLogFiles.getSelectedIndex() - 1;
+	    if(index < 0)
+		index = 0;
+	}
+
+	ArrayList<String> list = (ArrayList<String>)jListAvailableLogFiles.getSelectedValuesList();
+	for (int i = 0; i < list.size(); ++i)
+	{
+	    String s = list.get(i);
+	    modelEnabledLogFiles.addElement(s);
+	    modelAvailableLogFiles.removeElement(s);
+	}
+
+	jListAvailableLogFiles.setSelectedIndex(index);
+	sortList(jListEnabledLogFiles, ListComparator.Type.LOG);
+	jListAvailableLogFiles.setSelectedIndex(index);
+    }//GEN-LAST:event_jButtonAddLogFileActionPerformed
+
+    private void jButtonRemoveLogFileActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRemoveLogFileActionPerformed
+    {//GEN-HEADEREND:event_jButtonRemoveLogFileActionPerformed
+	int index = 0;
+
+	if (jListEnabledLogFiles.getSelectedIndices().length == 1)
+	{
+	    index = jListEnabledLogFiles.getSelectedIndex() - 1;
+	    if(index < 0)
+		index = 0;
+	}
+
+	ArrayList<String> list = (ArrayList<String>)jListEnabledLogFiles.getSelectedValuesList();
+	for (int i = 0; i < list.size(); ++i)
+	{
+	    String s = list.get(i);
+	    modelAvailableLogFiles.addElement(s);
+	    modelEnabledLogFiles.removeElement(s);
+	}
+
+	jListEnabledLogFiles.setSelectedIndex(index);
+	sortList(jListAvailableLogFiles, ListComparator.Type.LOG);
+	jListEnabledLogFiles.setSelectedIndex(index);
+    }//GEN-LAST:event_jButtonRemoveLogFileActionPerformed
+
     /**
      *
      * @return Two dimensional string where [0] is the name/alias and [1] is the
      *         hostname/ip
      */
-    public String[] showDialog()
+    public ArrayList<String> showDialog()
     {
 	setVisible(true);
 
-	return new String[]
+	ArrayList<String> returnValue = new ArrayList<>();
+
+	returnValue.add(jTextFieldServerName.getText());
+	returnValue.add(jTextFieldHostname.getText());
+
+	for(int i = 0; i < modelEnabledLogFiles.size(); ++i)
 	{
-	    jTextFieldServerName.getText(), jTextFieldHostname.getText()
-	};
+	    returnValue.add((String)modelEnabledLogFiles.get(i));
+	}
+
+	return returnValue;
     }
 
     private void verifyInput()
@@ -229,15 +419,44 @@ public class ServerDialog extends javax.swing.JDialog
 	dispose();
     }
 
+    private void sortList(JList list, ListComparator.Type type)
+    {
+	DefaultListModel model = (DefaultListModel) list.getModel();
+	String name = (String) list.getSelectedValue();
+
+	ListComparator lc = new ListComparator(type);
+	TreeSet<String> sortedSet = new TreeSet<>(lc);
+	sortedSet.addAll(new ArrayList<>(Collections.list(model.elements())));
+
+	model.clear();
+
+	for (String s : sortedSet)
+	{
+	    model.addElement(s);
+	}
+
+	list.setSelectedValue(name, true);
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButtonAddLogFile;
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonOK;
+    private javax.swing.JButton jButtonRemoveLogFile;
+    private javax.swing.JLabel jLabelAvailableLogFiles;
+    private javax.swing.JLabel jLabelEnabledLogFiles;
     private javax.swing.JLabel jLabelHostname;
     private javax.swing.JLabel jLabelServerName;
+    private javax.swing.JList jListAvailableLogFiles;
+    private javax.swing.JList jListEnabledLogFiles;
     private javax.swing.JPanel jPanelRoot;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextField jTextFieldHostname;
     private javax.swing.JTextField jTextFieldServerName;
     // End of variables declaration//GEN-END:variables
 
     private final int id = 2;
+    private DefaultListModel modelAvailableLogFiles;
+    private DefaultListModel modelEnabledLogFiles;
 }

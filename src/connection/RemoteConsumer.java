@@ -1,15 +1,22 @@
 package connection;
 
-import ch.ethz.ssh2.StreamGobbler;
+import java.awt.Color;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JTextArea;
+import java.util.regex.Pattern;
+import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import logfilter.Filter;
 import logfilter.Log;
 import persistence.Preferences;
@@ -21,13 +28,13 @@ import persistence.Preferences;
  */
 public class RemoteConsumer extends Thread
 {
-    protected char[][] lines;
-    protected int posy;
-    protected int posx;
-    protected int x, y;
-    protected StreamGobbler in;
+    private static final int MAX_CHAR_BUFF = 50000;
+    private static final Pattern pattern = Pattern.compile("^.*[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$");
+//    private static final String messageHeader = "^.*[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$";
+
+    protected BufferedReader in;
     protected InputStream monitoringIn;
-    protected JTextArea console;
+    protected JTextPane console;
     protected boolean canConsume;
     protected Map<String, Filter> filterMap;
     protected String logName;
@@ -36,52 +43,116 @@ public class RemoteConsumer extends Thread
     protected Session monitoringSession;
     protected String currentFileName;
     private String savedBuffer;
-    private final int MAX_CHAR_BUFF = 10000;
     private Timer stateTimer;
     private UpdaterDaemon updaterDaemonThread;
 
-    protected RemoteConsumer(JTextArea console, String serverName, String logName)
+    protected RemoteConsumer(JTextPane console, String serverName, String logName)
     {
-	posy = 0;
-	posx = 0;
-	this.x = console.getColumns();
-	this.y = console.getRows();
+	super("Consumer-" + serverName + "-" + logName);
+
 	this.console = console;
 	this.logName = logName;
 	this.serverName = serverName;
 	filterMap = Preferences.getInstance().getLog(logName).getEnabledFilters();
 	savedBuffer = "";
-
-	lines = new char[y][];
-    }
-
-    protected void addText(byte[] data, int len)
-    {
-	StringBuilder sb = new StringBuilder(x * y);
-
-	for (int i = 0; i < len; i++)
-	{
-	    sb.append((char) (data[i] & 0xff));
-	}
-
-	writeToConsole(sb.toString());
+	currentFileName = "";
     }
 
     /**
      * Writes the specified message to the console by using the Swing thread
      *
      * @param message The message to append to the console
+     * @param highlightText Determines whether we should look for keywords or
+     *                      not
      */
-    protected void writeToConsole(final String message)
+    protected void writeToConsole(final String message, final boolean highlightText)
     {
 	SwingUtilities.invokeLater(new Runnable()
 	{
+	    private int min = -2;
+	    private int length;
+	    private String text;
+	    private Color highlightColor;
+
+
 	    @Override
 	    public void run()
 	    {
-		console.append(message);
+		try
+		{
+		    text = message;
+		    StyledDocument doc = console.getStyledDocument();
+
+		    if (highlightText)
+		    {
+			while (min != -1)
+			{
+			    findFirstKeyword();
+
+			    if (min > 0) // if a keyword was found
+			    {
+				doc.insertString(doc.getLength(), text.substring(0, min), null);
+
+				SimpleAttributeSet keyWord = new SimpleAttributeSet();
+				StyleConstants.setForeground(keyWord, highlightColor);
+//				StyleConstants.setForeground(keyWord, Color.RED);
+//				StyleConstants.setBackground(keyWord, Color.YELLOW);
+				StyleConstants.setBold(keyWord, true);
+
+				doc.insertString(doc.getLength(), text.substring(min, min + length), keyWord);
+
+				text = text.substring(min + length);
+				min = -2;
+				length = 0;
+			    }
+			    else if (min == -1) // no more keyword, so we just ouput the rest
+			    {
+				doc.insertString(doc.getLength(), text, null);
+			    }
+			}
+		    }
+		    else
+		    {
+			doc.insertString(doc.getLength(), text, null);
+		    }
+
+		    console.repaint();
+		}
+		catch (BadLocationException ex)
+		{
+		    Logger.getLogger(RemoteConsumer.class.getName()).log(Level.SEVERE, null, ex);
+		}
+	    }
+
+	    private void findFirstKeyword()
+	    {
+		boolean modified = false;
+		for (Filter f : filterMap.values())
+		{
+		    if (text.toLowerCase().contains(f.getKeyword().toLowerCase()))
+		    {
+			int index = text.toLowerCase().indexOf(f.getKeyword().toLowerCase());
+			if (min == -2 || index < min)
+			{
+			    modified = true;
+			    min = index;
+			    length = f.getKeyword().length();
+			    highlightColor = f.getHighlightColor();
+			}
+		    }
+		}
+		if (!modified)
+		{
+		    min = -1;
+		}
 	    }
 	});
+
+	// Write to log file if enabled
+	if (!message.trim().isEmpty() && Preferences.getInstance().isOutputToDisk() && persistence.Logger.getInstance().isOpen())
+	{
+	    persistence.Logger.getInstance().write(message);
+	}
     }
 
     /**
@@ -95,13 +166,12 @@ public class RemoteConsumer extends Thread
 
     protected void initialise()
     {
-	writeToConsole(serverName + " : " + logName + "\n");
+	writeToConsole(serverName + " : " + logName + "\n", false);
 
-	currentFileName = getFileName();
-
+	int refreshInterval = 1000 * Preferences.getInstance().getRefreshInterval();
 	updaterDaemonThread = new UpdaterDaemon();
 	stateTimer = new Timer(true);
-	stateTimer.scheduleAtFixedRate(updaterDaemonThread, 4000, 4000);
+	stateTimer.scheduleAtFixedRate(updaterDaemonThread, refreshInterval, refreshInterval);
     }
 
     protected void cleanup()
@@ -112,7 +182,7 @@ public class RemoteConsumer extends Thread
 	stateTimer.cancel();
 	updaterDaemonThread.cancel();
 
-	writeToConsole(serverName + " : " + logName + "\n");
+	writeToConsole(serverName + " : " + logName + "\n", false);
     }
 
     @Override
@@ -121,11 +191,14 @@ public class RemoteConsumer extends Thread
 	// Initialise the connection
 	initialise();
 
+	currentFileName = getFileName();
+
 	canConsume = true;
 
 	while (canConsume)
 	{
-	    writeToConsole(readUntilPattern());
+	    writeToConsole(readUntilPattern(), true);
+//	    readUntilPattern();
 	}
 
 	cleanup();
@@ -148,154 +221,176 @@ public class RemoteConsumer extends Thread
     {
 	try
 	{
-	    StringBuilder sb = new StringBuilder();
+	    StringBuilder sb = new StringBuilder(MAX_CHAR_BUFF);
 
-	    int charCounter = 0;
-	    char ch;
+	    // Append the saved buffer in case there was anything
+	    sb.append(savedBuffer);
 
-	    while (true)
+	    //Clear it afterwards
+	    savedBuffer = "";
+
+	    while (canConsume)
 	    {
-		ch = (char) in.read();
-		++charCounter;
+		// Make sure we have data waiting (we don't
+		// want to block on the in.read)
+		while (!in.ready())
+		{
+		    // Wait another 10 ms
+		    sleep(10);
 
-		sb.append(ch);
+		    // If a stop was called
+		    if (!canConsume)
+		    {
+			return "";
+		    }
+		}
+
+		String line = in.readLine() + "\n";
+		sb.append(line);
 
 		// Process each filter for this log file
 		for (Filter f : filterMap.values())
 		{
-		    char lastChar = f.getKeyword().charAt(f.getKeyword().length() - 1);
-
-		    // If the last character of our filter is the same as the
-		    // last character received...
-		    // This is for performance concerns, prevents the checking
-		    // of each single character when we have no clue if it is
-		    // even remotely close to our filter
-		    if (ch == lastChar)
+		    // If we found a match with the current filter
+		    if (line.toLowerCase().contains(f.getKeyword().toLowerCase()))
 		    {
-			// If we found a match with the current filter
-			if (sb.toString().toLowerCase().endsWith(f.getKeyword()))
+			if (!canConsume)
 			{
-			    StringBuilder finalMessage = new StringBuilder();
+			    return "";
+			}
 
-			    // Append the message banner
-			    finalMessage.append(addServerBanner());
+			StringBuilder finalMessage = new StringBuilder();
 
-			    // Append the saved buffer in case there was anything
-			    finalMessage.append(savedBuffer);
+			// Append the message banner
+			finalMessage.append(addServerBanner());
 
-			    //Clear it afterwards
-			    savedBuffer = "";
+			// Split our buffer by line. Last line will contain
+			// the keyword we were looking for
+			String receivedLines[] = sb.toString().split("\\n");
 
-			    // Split our buffer by line. Last line will contain
-			    // the keyword we were looking for
-			    String receivedLines[] = sb.toString().split("\\n");
+			// -2 because we don't want to search the line
+			// containing the keyword found (aka the latest line)
+			int firstLine = receivedLines.length - 1 - 1;
+			int message = 0;
 
-			    // -2 because we don't want to search the line
-			    // containing the keyword found (aka the latest line)
-			    int firstLine = receivedLines.length - 1 - 1;
-			    int message = 0;
-
-			    while (firstLine >= 0 && message < f.getLinesBefore() && receivedLines.length > 1)
+			while (firstLine >= 0 && message < f.getMessagesBefore() + 1 && receivedLines.length > 1)
+			{
+			    // Verify if the line matches "YYYY.MM.DD .................."
+			    if (pattern.matcher(receivedLines[firstLine]).matches())
 			    {
-				// Verify if the line matches "YYYY.MM.DD .................."
-				if (receivedLines[firstLine].matches("^.*[0-9]{4}\\.(3[01]|[12][0-9]|0[1-9])\\.(1[0-2]|0[1-9])\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$"))
-				{
-				    // Increment the number of messages found
-				    ++message;
-				}
-
-				// change line
-				--firstLine;
+				// Increment the number of messages found
+				++message;
 			    }
 
-			    // cancel out the last -- of the while
-			    ++firstLine;
+			    // change line
+			    --firstLine;
+			}
 
-			    while (firstLine < receivedLines.length - 1)
+			// cancel out the last -- of the while
+			++firstLine;
+
+			while (firstLine < receivedLines.length - 1)
+			{
+			    finalMessage.append(receivedLines[firstLine++]);
+			    finalMessage.append("\n");
+			}
+
+			// Append the line with the actual keyword
+			finalMessage.append(line);
+
+			int numMessagesAfter = f.getMessagesAfter();
+			boolean matchFound = false;
+			// Wait for the number of messages after, as well as
+			// the current line which contained the keyword,
+			// hence the + 1
+			for (int i = 0; i < numMessagesAfter + 1; ++i)
+			{
+			    String receivedLinesAfter = "";
+
+			    do
 			    {
-				// Append the line with the actual keyword
-				finalMessage.append(receivedLines[firstLine++]);
-				finalMessage.append("\n");
+				// Make sure we have data waiting (we don't
+				// want to block on the in.read)
+				while (!in.ready())
+				{
+				    // Wait another 10 ms
+				    sleep(10);
+
+				    // If a stop was called
+				    if (!canConsume)
+				    {
+					return "";
+				    }
+				}
+
+				// Read the next character
+				receivedLinesAfter += in.readLine() + "\n";
+
+				// Rerun all the filters for the lines after our found keyword
+				for (Filter filter : filterMap.values())
+				{
+				    if (receivedLinesAfter.toLowerCase().contains(filter.getKeyword().toLowerCase()))
+				    {
+					if (filter.getMessagesAfter() > numMessagesAfter - i)
+					{
+					    // X lines before are already done, so
+					    // we just reset the counter for the lines
+					    // after the keyword so that it does Y
+					    // lines after this new detection
+					    i = 0;
+					    numMessagesAfter = filter.getMessagesAfter();
+					}
+				    }
+				}
+
+				// Look for the header of the next message
+				for (String s : receivedLinesAfter.split("\\n"))
+				{
+				    if (pattern.matcher(s).matches())
+				    {
+					matchFound = true;
+				    }
+				}
+			    } while (!matchFound);
+
+			    matchFound = false;
+
+			    // If this is not the last message AND we did not reach our buffer limit
+			    if (i != numMessagesAfter && finalMessage.length() <= MAX_CHAR_BUFF)
+			    {
+				// We simply append the message
+				// including the header of the next message
+				finalMessage.append(receivedLinesAfter);
+			    }
+			    else // This is the last message
+			    {
+				// Make sure we don't continue looking for messages
+				// (in case we reached buffer limit)
+				i = numMessagesAfter;
+
+				String[] splitMessage = receivedLinesAfter.split("\\n");
+				for (String s : splitMessage)
+				{
+				    // If it isn't the header of the next
+				    // message
+				    if (!pattern.matcher(s).matches())
+				    {
+					// Display it for the current loop
+					finalMessage.append(s);
+					finalMessage.append("\n");
+				    }
+				    else // This is the header of the next message
+				    {
+					// Save it for the next iteration!
+					savedBuffer = s;
+				    }
+				}
 			    }
 
-			    // Append the line with the actual keyword
-			    finalMessage.append(receivedLines[receivedLines.length - 1]);
-
-			    int numMessagesAfter = f.getMessagesAfter();
-			    boolean matchFound = false;
-			    // Wait for the number of messages after, as well as
-			    // the current line which contained the keyword,
-			    // hence the + 1
-			    for (int i = 0; i < numMessagesAfter + 1; ++i)
-			    {
-				StringBuilder receivedLinesAfter = new StringBuilder();
-
-				do
-				{
-				    // Read the next character
-				    receivedLinesAfter.append((char) in.read());
-
-				    // Rerun all the filters for the lines after our found keyword
-				    for (Filter filter : filterMap.values())
-				    {
-					if (receivedLinesAfter.toString().toLowerCase().endsWith(filter.getKeyword()))
-					{
-					    if (filter.getMessagesAfter() > numMessagesAfter - i)
-					    {
-						// X lines before are already done, so
-						// we just reset the counter for the lines
-						// after the keyword so that it does Y
-						// lines after this new detection
-						i = 0;
-						numMessagesAfter = filter.getMessagesAfter();
-					    }
-					}
-				    }
-
-				    // Look for the header of the next message
-				    for (String s : receivedLinesAfter.toString().split("\\n"))
-				    {
-					if (s.matches("^.*[0-9]{4}\\.(3[01]|[12][0-9]|0[1-9])\\.(1[0-2]|0[1-9])\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$"))
-					{
-					    matchFound = true;
-					}
-				    }
-				} while (!matchFound);
-
-				matchFound = false;
-
-				// If this is not the last message
-				if (i != numMessagesAfter)
-				{
-				    // We simply append the message
-				    // including the header of the next message
-				    finalMessage.append(receivedLinesAfter);
-				}
-				else // This is the last message
-				{
-				    String[] splitMessage = receivedLinesAfter.toString().split("\\n");
-				    for (String s : splitMessage)
-				    {
-					// If it isn't the header of the next
-					// message
-					if (!s.matches("^.*[0-9]{4}\\.(3[01]|[12][0-9]|0[1-9])\\.(1[0-2]|0[1-9])\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$"))
-					{
-					    // Display it for the current loop
-					    finalMessage.append(s);
-					    finalMessage.append("\n");
-					}
-					else // This is the header of the next message
-					{
-					    // Save it for the next iteration!
-					    savedBuffer = s;
-					}
-				    }
-				}
-
-				// NEVERMIND, this is bad, because we will have
-				// issues with prints from one server occuring
-				// during prints of other servers (or log files)
-				//
+			    // NEVERMIND, this is bad, because we will have
+			    // issues with prints from one server occuring
+			    // during prints of other servers (or log files)
+			    //
 //				// After a certain percentage (ex: 25%) of
 //				// numLinesAfter, display it to the console in
 //				// order to improve the response time and not make
@@ -305,18 +400,36 @@ public class RemoteConsumer extends Thread
 //				    writeToConsole(finalMessage.toString());
 //				    finalMessage = new StringBuilder();
 //				}
-			    }
-
-			    // Return the final string
-			    return finalMessage.toString();
 			}
+
+			// Return the final string
+			return finalMessage.toString();
 		    }
 		}
 
 		// Make sure we haven't reached the buffer limit yet
-		if (charCounter == MAX_CHAR_BUFF)
+		if (sb.length() > MAX_CHAR_BUFF)
 		{
-		    return "";
+//		    String[] lines = sb.toString().split("\\n");
+//		    sb = new StringBuilder();
+//
+//		    // remove 15 lines
+//		    for (int i = 15; i < lines.length; ++i)
+//		    {
+//			sb.append(lines[i]);
+//			sb.append("\n");
+//		    }
+
+//		    for (int i = 0; i < lines.length && i < 15; ++i)
+//		    {
+//			charCounter -= lines[i].length();
+//		    }
+		    int charsToDelete = sb.length() - MAX_CHAR_BUFF + MAX_CHAR_BUFF / 4;
+
+		    sb.delete(0, charsToDelete);
+//		    sb.delete(0, sb.indexOf("\\n") + 2);
+
+		    System.gc();
 		}
 	    }
 	}
@@ -324,8 +437,12 @@ public class RemoteConsumer extends Thread
 	{
 	    Logger.getLogger(ServerConnectionTelnet.class.getName()).log(Level.SEVERE, null, ex);
 	}
+	catch (InterruptedException ex)
+	{
+	    Logger.getLogger(RemoteConsumer.class.getName()).log(Level.SEVERE, null, ex);
+	}
 
-	return null;
+	return "";
     }
 
     /**
@@ -337,11 +454,13 @@ public class RemoteConsumer extends Thread
     private String addServerBanner()
     {
 	StringBuilder sb = new StringBuilder();
-	sb.append("\n\n----------------------------- ");
+	sb.append("\n\n\n\n---------------------------------------------- ");
 	sb.append(serverName);
 	sb.append(" : ");
 	sb.append(logName);
-	sb.append(" -----------------------------\n\n");
+	sb.append(" (");
+	sb.append(currentFileName.split("\\n")[0]);
+	sb.append(") ----------------------------------------------\n\n");
 
 	return sb.toString();
     }
@@ -368,17 +487,28 @@ public class RemoteConsumer extends Thread
 
 	monitoringSession.execCommand("ls -rt " + log.getFilePath() + " | grep " + log.getNamePrefix() + "* | tail -1");
 
-	StringBuilder sb = new StringBuilder();
+	String s = "";
+	BufferedReader br = new BufferedReader(new InputStreamReader(monitoringIn));
 	// Receive the answer
 	while (true)
 	{
 	    try
 	    {
-		sb.append((char) monitoringIn.read());
+//		sb.append((char) monitoringIn.read());
+		s += br.readLine();
 
-		if (sb.toString().endsWith("\n"))
+		if (!s.equals("null"))
 		{
+		    if (s.contains("$ "))
+		    {
+			s = s.substring(s.indexOf("$ ") + 2);
+		    }
 		    break;
+		}
+		else
+		{
+		    writeToConsole("\n\n[" + serverName + " : " + logName + "] " + "Error: File or path does not exist\n\n", false);
+		    return currentFileName;
 		}
 	    }
 	    catch (IOException ex)
@@ -389,7 +519,7 @@ public class RemoteConsumer extends Thread
 
 	monitoringConnection.closeSession();
 
-	return sb.toString();
+	return s;
     }
 
     /**
@@ -404,7 +534,7 @@ public class RemoteConsumer extends Thread
 	    String newFileName = getFileName();
 	    if (!currentFileName.equals(newFileName))
 	    {
-		writeToConsole("\n\n[INFO] Monitoring log file updated on " + serverName + ": " + newFileName + "\n\n");
+		writeToConsole("\n\n[INFO] Monitoring log file updated on " + serverName + ": " + newFileName + "\n\n", false);
 		ConnectionManager.getInstance().restartConnection(serverName, logName);
 	    }
 	}

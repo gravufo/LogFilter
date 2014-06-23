@@ -433,12 +433,13 @@
                   <Group type="102" alignment="0" attributes="0">
                       <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="jLabelTemplateLogFiles" alignment="0" max="32767" attributes="0"/>
+                          <Component id="jLabelTemplateLogFiles" alignment="0" pref="160" max="32767" attributes="0"/>
                           <Component id="jScrollPaneTemplateLogFiles" alignment="0" pref="0" max="32767" attributes="0"/>
                           <Group type="102" alignment="0" attributes="0">
                               <Component id="jButtonTemplateLogFileAdd" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace max="32767" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
                               <Component id="jButtonTemplateLogFileRemove" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
@@ -494,7 +495,7 @@
                   <Font name="Tahoma" size="12" style="1"/>
                 </Property>
                 <Property name="horizontalAlignment" type="int" value="0"/>
-                <Property name="text" type="java.lang.String" value="Log Files"/>
+                <Property name="text" type="java.lang.String" value="Template Log Files"/>
                 <Property name="focusable" type="boolean" value="false"/>
               </Properties>
             </Component>
@@ -586,10 +587,9 @@
                           <Component id="jSeparatorLogFileFilters" min="-2" pref="10" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="jScrollPaneLogFileFilters" alignment="0" max="32767" attributes="0"/>
+                              <Component id="jScrollPaneLogFileFilters" alignment="0" pref="253" max="32767" attributes="0"/>
                               <Group type="102" alignment="0" attributes="0">
-                                  <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                                  <Component id="jPanelFilterProperties" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jPanelFilterProperties" max="32767" attributes="0"/>
                                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="3" attributes="0">
                                       <Component id="jButtonLogFileFilterAdd" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -605,7 +605,7 @@
               <SubComponents>
                 <Component class="javax.swing.JLabel" name="jLabelTemplateLogFileName">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Prefix of the log file:"/>
+                    <Property name="text" type="java.lang.String" value="Prefix of the log file name:"/>
                     <Property name="focusable" type="boolean" value="false"/>
                   </Properties>
                 </Component>
@@ -617,6 +617,7 @@
                 </Component>
                 <Component class="javax.swing.JTextField" name="jTextFieldLogFilePath">
                   <Properties>
+                    <Property name="toolTipText" type="java.lang.String" value="Absolute path to the log file (including trailing slash)"/>
                     <Property name="enabled" type="boolean" value="false"/>
                     <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
                       <ComponentRef name="jListLogFileFilters"/>
@@ -628,6 +629,7 @@
                 </Component>
                 <Component class="javax.swing.JTextField" name="jTextFieldLogFilePrefix">
                   <Properties>
+                    <Property name="toolTipText" type="java.lang.String" value="Prefix of the log file name (e.g.: XSLog)"/>
                     <Property name="enabled" type="boolean" value="false"/>
                     <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
                       <ComponentRef name="jTextFieldLogFilePath"/>
@@ -716,26 +718,9 @@
                   <Layout>
                     <DimensionLayout dim="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Group type="102" alignment="0" attributes="0">
+                          <Group type="102" attributes="0">
                               <EmptySpace max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Group type="102" alignment="0" attributes="0">
-                                      <Group type="103" groupAlignment="0" attributes="0">
-                                          <Group type="102" alignment="0" attributes="0">
-                                              <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                                  <Component id="jLabelLogFileFilterPrePrint" alignment="0" max="32767" attributes="0"/>
-                                                  <Component id="jLabelLogFileFilterPostPrint" alignment="0" max="32767" attributes="0"/>
-                                              </Group>
-                                              <EmptySpace type="separate" max="-2" attributes="0"/>
-                                              <Group type="103" groupAlignment="0" attributes="0">
-                                                  <Component id="jSpinnerLogFileFilterPrePrint" alignment="0" min="-2" max="-2" attributes="0"/>
-                                                  <Component id="jSpinnerLogFileFilterPostPrint" alignment="0" min="-2" max="-2" attributes="0"/>
-                                              </Group>
-                                          </Group>
-                                          <Component id="jCheckBoxLogFileFilterEnabled" alignment="0" min="-2" max="-2" attributes="0"/>
-                                      </Group>
-                                      <EmptySpace min="0" pref="74" max="32767" attributes="0"/>
-                                  </Group>
                                   <Group type="102" alignment="0" attributes="0">
                                       <Group type="103" groupAlignment="0" attributes="0">
                                           <Component id="jLabelLogFileFilterName" alignment="0" min="-2" max="-2" attributes="0"/>
@@ -747,6 +732,30 @@
                                           <Component id="jTextFieldLogFileFilterKeyword" alignment="0" max="32767" attributes="0"/>
                                       </Group>
                                   </Group>
+                                  <Group type="102" attributes="0">
+                                      <Group type="103" groupAlignment="0" attributes="0">
+                                          <Component id="jCheckBoxLogFileFilterEnabled" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Group type="102" alignment="0" attributes="0">
+                                              <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                                                  <Component id="jLabelLogFileFilterPrePrint" alignment="0" max="32767" attributes="0"/>
+                                                  <Component id="jLabelLogFileFilterPostPrint" alignment="0" max="32767" attributes="0"/>
+                                              </Group>
+                                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                                              <Group type="103" groupAlignment="0" attributes="0">
+                                                  <Component id="jSpinnerLogFileFilterPrePrint" min="-2" max="-2" attributes="0"/>
+                                                  <Component id="jSpinnerLogFileFilterPostPrint" min="-2" max="-2" attributes="0"/>
+                                              </Group>
+                                          </Group>
+                                          <Group type="102" alignment="0" attributes="0">
+                                              <Component id="jLabelHighlightColor" min="-2" max="-2" attributes="0"/>
+                                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                                              <Component id="jColorFieldHighlight" min="-2" pref="22" max="-2" attributes="0"/>
+                                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                                              <Component id="jButtonHighlightColor" min="-2" pref="115" max="-2" attributes="0"/>
+                                          </Group>
+                                      </Group>
+                                      <EmptySpace min="0" pref="7" max="32767" attributes="0"/>
+                                  </Group>
                               </Group>
                               <EmptySpace max="-2" attributes="0"/>
                           </Group>
@@ -755,14 +764,20 @@
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" alignment="0" attributes="0">
-                              <EmptySpace max="32767" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
                               <Component id="jCheckBoxLogFileFilterEnabled" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <EmptySpace max="32767" attributes="0"/>
+                              <Group type="103" groupAlignment="3" attributes="0">
+                                  <Component id="jLabelHighlightColor" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jColorFieldHighlight" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jButtonHighlightColor" alignment="3" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabelLogFileFilterName" alignment="3" min="-2" max="-2" attributes="0"/>
                                   <Component id="jTextFieldLogFileFilterName" alignment="3" min="-2" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabelLogFileFilterKeyword" alignment="3" min="-2" max="-2" attributes="0"/>
                                   <Component id="jTextFieldLogFileFilterKeyword" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -798,13 +813,13 @@
                     </Component>
                     <Component class="javax.swing.JLabel" name="jLabelLogFileFilterPostPrint">
                       <Properties>
-                        <Property name="text" type="java.lang.String" value="Number of lines to display after:"/>
+                        <Property name="text" type="java.lang.String" value="Number of messages to display after:"/>
                         <Property name="focusable" type="boolean" value="false"/>
                       </Properties>
                     </Component>
                     <Component class="javax.swing.JLabel" name="jLabelLogFileFilterPrePrint">
                       <Properties>
-                        <Property name="text" type="java.lang.String" value="Number of lines to display before:"/>
+                        <Property name="text" type="java.lang.String" value="Number of messages to display before:"/>
                         <Property name="focusable" type="boolean" value="false"/>
                       </Properties>
                     </Component>
@@ -813,6 +828,7 @@
                         <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
                           <SpinnerModel initial="10" maximum="50" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
                         </Property>
+                        <Property name="toolTipText" type="java.lang.String" value=""/>
                         <Property name="enabled" type="boolean" value="false"/>
                         <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
                           <ComponentRef name="jSpinnerLogFileFilterPostPrint"/>
@@ -844,6 +860,7 @@
                     </Component>
                     <Component class="javax.swing.JTextField" name="jTextFieldLogFileFilterKeyword">
                       <Properties>
+                        <Property name="toolTipText" type="java.lang.String" value="Keyword that will be used to match text in the logs"/>
                         <Property name="enabled" type="boolean" value="false"/>
                         <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
                           <ComponentRef name="jSpinnerLogFileFilterPrePrint"/>
@@ -855,12 +872,13 @@
                     </Component>
                     <Component class="javax.swing.JLabel" name="jLabelLogFileFilterName">
                       <Properties>
-                        <Property name="text" type="java.lang.String" value="Name of the filter:"/>
+                        <Property name="text" type="java.lang.String" value="Profile name:"/>
                         <Property name="focusable" type="boolean" value="false"/>
                       </Properties>
                     </Component>
                     <Component class="javax.swing.JTextField" name="jTextFieldLogFileFilterName">
                       <Properties>
+                        <Property name="toolTipText" type="java.lang.String" value="Name of the profile"/>
                         <Property name="enabled" type="boolean" value="false"/>
                         <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
                           <ComponentRef name="jTextFieldLogFileFilterKeyword"/>
@@ -870,15 +888,39 @@
                         <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextFieldLogFileFilterNameFocusLost"/>
                       </Events>
                     </Component>
+                    <Component class="javax.swing.JLabel" name="jLabelHighlightColor">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" value="Foreground highlight color:"/>
+                      </Properties>
+                    </Component>
+                    <Component class="javax.swing.JTextField" name="jColorFieldHighlight">
+                      <Properties>
+                        <Property name="editable" type="boolean" value="false"/>
+                        <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="ff" green="ff" red="ff" type="rgb"/>
+                        </Property>
+                        <Property name="enabled" type="boolean" value="false"/>
+                        <Property name="focusable" type="boolean" value="false"/>
+                      </Properties>
+                    </Component>
+                    <Component class="javax.swing.JButton" name="jButtonHighlightColor">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" value="Choose color..."/>
+                      </Properties>
+                      <Events>
+                        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButtonHighlightColorActionPerformed"/>
+                      </Events>
+                    </Component>
                   </SubComponents>
                 </Container>
                 <Component class="javax.swing.JLabel" name="jLabelLogFileAlias">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Name or alias:"/>
+                    <Property name="text" type="java.lang.String" value="Profile name:"/>
                   </Properties>
                 </Component>
                 <Component class="javax.swing.JTextField" name="jTextFieldLogFileName">
                   <Properties>
+                    <Property name="toolTipText" type="java.lang.String" value="Name of the profile"/>
                     <Property name="enabled" type="boolean" value="false"/>
                     <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
                       <ComponentRef name="jTextFieldLogFilePrefix"/>
@@ -933,7 +975,7 @@
           <Layout>
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="jSeparatorCredentials" alignment="0" max="32767" attributes="0"/>
+                  <Component id="jSeparatorCredentials" alignment="0" pref="696" max="32767" attributes="0"/>
                   <Component id="jSeparator1" alignment="0" max="32767" attributes="0"/>
                   <Group type="102" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
@@ -954,26 +996,53 @@
                               </Group>
                           </Group>
                           <Component id="jLabelTerminalOptions" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Group type="103" alignment="0" groupAlignment="1" attributes="0">
+                          <Group type="102" alignment="0" attributes="0">
                               <Component id="jCheckBoxFlashTaskbar" min="-2" max="-2" attributes="0"/>
-                              <Group type="102" attributes="0">
-                                  <Group type="103" groupAlignment="0" attributes="0">
-                                      <Component id="jLabelMaxNumLines" alignment="0" min="-2" max="-2" attributes="0"/>
-                                      <Component id="jLabelTerminalForegroundColor" alignment="0" min="-2" max="-2" attributes="0"/>
-                                      <Component id="jLabelTerminalBackgroundColor" alignment="0" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <Component id="jCheckBoxLogToDisk" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <Group type="102" alignment="0" attributes="0">
+                              <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                                  <Group type="102" alignment="0" attributes="0">
+                                      <Component id="jLabelMaxNumLines" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace min="-2" pref="93" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace min="-2" pref="19" max="-2" attributes="0"/>
-                                  <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                      <Component id="jButtonTerminalBackgroundColor" max="32767" attributes="0"/>
-                                      <Component id="jButtonTerminalForegroundColor" max="32767" attributes="0"/>
-                                      <Component id="jSpinnerMaxNumLines" alignment="1" min="-2" max="-2" attributes="0"/>
-                                      <Component id="jButtonFont" alignment="0" max="32767" attributes="0"/>
+                                  <Group type="102" alignment="1" attributes="0">
+                                      <Group type="103" groupAlignment="1" attributes="0">
+                                          <Group type="102" attributes="0">
+                                              <Component id="jLabelTerminalForegroundColor" min="-2" max="-2" attributes="0"/>
+                                              <EmptySpace max="32767" attributes="0"/>
+                                              <Component id="jColorFieldForeground" min="-2" pref="22" max="-2" attributes="0"/>
+                                          </Group>
+                                          <Group type="102" attributes="0">
+                                              <Component id="jLabelTerminalBackgroundColor" min="-2" max="-2" attributes="0"/>
+                                              <EmptySpace max="32767" attributes="0"/>
+                                              <Component id="jColorFieldBackground" min="-2" pref="22" max="-2" attributes="0"/>
+                                          </Group>
+                                      </Group>
+                                      <EmptySpace type="separate" max="-2" attributes="0"/>
                                   </Group>
                               </Group>
+                              <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                                  <Component id="jButtonTerminalBackgroundColor" max="32767" attributes="0"/>
+                                  <Component id="jButtonTerminalForegroundColor" max="32767" attributes="0"/>
+                                  <Component id="jSpinnerMaxNumLines" alignment="1" min="-2" max="-2" attributes="0"/>
+                              </Group>
                           </Group>
-                          <Component id="jLabelFont" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Group type="103" alignment="0" groupAlignment="1" max="-2" attributes="0">
+                              <Group type="102" alignment="0" attributes="0">
+                                  <Component id="jLabelAutoRefresh" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
+                                  <Component id="jSpinnerAutoRefresh" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <Group type="102" alignment="0" attributes="0">
+                                  <Component id="jLabelFont" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace min="-2" pref="191" max="-2" attributes="0"/>
+                                  <Component id="jButtonFont" min="-2" pref="99" max="-2" attributes="0"/>
+                              </Group>
+                          </Group>
                       </Group>
-                      <EmptySpace pref="444" max="32767" attributes="0"/>
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -1004,23 +1073,33 @@
                           <Component id="jSpinnerMaxNumLines" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="jCheckBoxFlashTaskbar" min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="jCheckBoxFlashTaskbar" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jCheckBoxLogToDisk" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="jLabelTerminalForegroundColor" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jButtonTerminalForegroundColor" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jColorFieldForeground" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="jLabelTerminalBackgroundColor" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jButtonTerminalBackgroundColor" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jColorFieldBackground" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="jLabelFont" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jButtonFont" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace pref="86" max="32767" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="jLabelAutoRefresh" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="jSpinnerAutoRefresh" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace pref="48" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -1046,6 +1125,7 @@
             <Component class="javax.swing.JTextField" name="jTextFieldServerUsername">
               <Properties>
                 <Property name="text" type="java.lang.String" value="bwadmin"/>
+                <Property name="toolTipText" type="java.lang.String" value="Enter the username to use when we connect to any of the servers"/>
                 <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
                   <ComponentRef name="jPasswordFieldServerPassword"/>
                 </Property>
@@ -1063,6 +1143,7 @@
             <Component class="javax.swing.JPasswordField" name="jPasswordFieldServerPassword">
               <Properties>
                 <Property name="text" type="java.lang.String" value="bwadmin"/>
+                <Property name="toolTipText" type="java.lang.String" value="Enter the password to use when we connect to any of the servers"/>
               </Properties>
               <Events>
                 <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jPasswordFieldServerPasswordFocusLost"/>
@@ -1088,6 +1169,7 @@
                 <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
                   <SpinnerModel initial="30000" maximum="100000" minimum="30" numberType="java.lang.Integer" stepSize="10" type="number"/>
                 </Property>
+                <Property name="toolTipText" type="java.lang.String" value="The maxmimum number of lines to display in the terminal window"/>
               </Properties>
               <Events>
                 <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="jSpinnerMaxNumLinesStateChanged"/>
@@ -1123,6 +1205,7 @@
               <Properties>
                 <Property name="selected" type="boolean" value="true"/>
                 <Property name="text" type="java.lang.String" value="Flash task bar on new text"/>
+                <Property name="toolTipText" type="java.lang.String" value="If enabled, the task bar icon will flash if a new message is received while this window is out of focus"/>
               </Properties>
               <Events>
                 <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="jCheckBoxFlashTaskbarStateChanged"/>
@@ -1139,6 +1222,51 @@
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButtonFontActionPerformed"/>
+              </Events>
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabelAutoRefresh">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Automatic file refresh interval (in seconds):"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JSpinner" name="jSpinnerAutoRefresh">
+              <Properties>
+                <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+                  <SpinnerModel initial="4" maximum="600" minimum="1" numberType="java.lang.Integer" stepSize="1" type="number"/>
+                </Property>
+                <Property name="toolTipText" type="java.lang.String" value="Modifies the interval at which the program will verify if a newer log file is available"/>
+              </Properties>
+              <Events>
+                <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="jSpinnerAutoRefreshStateChanged"/>
+              </Events>
+            </Component>
+            <Component class="javax.swing.JTextField" name="jColorFieldForeground">
+              <Properties>
+                <Property name="editable" type="boolean" value="false"/>
+                <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                  <Color blue="ff" green="ff" red="ff" type="rgb"/>
+                </Property>
+                <Property name="enabled" type="boolean" value="false"/>
+                <Property name="focusable" type="boolean" value="false"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JTextField" name="jColorFieldBackground">
+              <Properties>
+                <Property name="editable" type="boolean" value="false"/>
+                <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                  <Color blue="ff" green="ff" red="ff" type="rgb"/>
+                </Property>
+                <Property name="enabled" type="boolean" value="false"/>
+                <Property name="focusable" type="boolean" value="false"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="jCheckBoxLogToDisk">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Log terminal to disk"/>
+                <Property name="toolTipText" type="java.lang.String" value="Enables the output of the terminal text to a log in the log folder relative to the executable"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBoxLogToDiskActionPerformed"/>
               </Events>
             </Component>
           </SubComponents>

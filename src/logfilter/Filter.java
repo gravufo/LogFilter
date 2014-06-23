@@ -1,5 +1,6 @@
 package logfilter;
 
+import java.awt.Color;
 import java.io.Serializable;
 
 /**
@@ -15,8 +16,9 @@ public class Filter implements Serializable
 	this.name = name;
 	enabled = false;
 	keyword = "";
-	linesBefore = 0;
-	lineAfter = 0;
+	messagesBefore = 0;
+	messagesAfter = 0;
+	highlightColor = Color.GREEN;
     }
     
     public Filter(Filter filter)
@@ -24,8 +26,9 @@ public class Filter implements Serializable
 	name = filter.name;
 	enabled = filter.enabled;
 	keyword = filter.keyword;
-	linesBefore = filter.linesBefore;
-	lineAfter = filter.lineAfter;
+	messagesBefore = filter.messagesBefore;
+	messagesAfter = filter.messagesAfter;
+	highlightColor = filter.highlightColor;
     }
 
     public boolean isEnabled()
@@ -58,24 +61,34 @@ public class Filter implements Serializable
 	this.keyword = keyword.toLowerCase();
     }
 
-    public int getLinesBefore()
+    public int getMessagesBefore()
     {
-	return linesBefore;
+	return messagesBefore;
     }
 
-    public void setLinesBefore(int linesBefore)
+    public void setMessagesBefore(int messagesBefore)
     {
-	this.linesBefore = linesBefore;
+	this.messagesBefore = messagesBefore;
     }
 
     public int getMessagesAfter()
     {
-	return lineAfter;
+	return messagesAfter;
     }
 
-    public void setLinesAfter(int lineAfter)
+    public void setMessagesAfter(int messagesAfter)
     {
-	this.lineAfter = lineAfter;
+	this.messagesAfter = messagesAfter;
+    }
+
+    public Color getHighlightColor()
+    {
+	return highlightColor;
+    }
+
+    public void setHighlightColor(Color highlightColor)
+    {
+	this.highlightColor = highlightColor;
     }
 
     /**
@@ -94,12 +107,20 @@ public class Filter implements Serializable
     private String keyword;
 
     /**
-     * Contains the number of lines that should be displayed before the keyword
+     * Contains the number of messages that should be displayed before the
+     * keyword
      */
-    private int linesBefore;
+    private int messagesBefore;
 
     /**
-     * Contains the number of lines that should be displayed after the keyword
+     * Contains the number of messages that should be displayed after the
+     * keyword
      */
-    private int lineAfter;
+    private int messagesAfter;
+
+    /**
+     * Contains the color of the foreground text to use when this filter's
+     * keyword is matched
+     */
+    private Color highlightColor;
 }

@@ -1,7 +1,8 @@
 package connection;
 
-import ch.ethz.ssh2.Connection;
-import java.io.IOException;
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSchException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -12,21 +13,22 @@ import java.util.logging.Logger;
  */
 public class SSHSession extends Session
 {
-    private ch.ethz.ssh2.Session session;
+    private ChannelExec session;
+
 
     /**
      * Constructor
      *
-     * @param connectionSSH The connection to open a session to
+     * @param session The connection to open a session to
      *
-     * @throws IOException Will be thrown if the session fails to open
+     * @throws JSchException Will be thrown if the session fails to open
      */
-    public SSHSession(Connection connectionSSH) throws IOException
+    public SSHSession(com.jcraft.jsch.Session session) throws JSchException
     {
-	session = connectionSSH.openSession();
+	this.session = (ChannelExec) session.openChannel("exec");
     }
 
-    public ch.ethz.ssh2.Session getSession()
+    public Channel getSession()
     {
 	return session;
     }
@@ -36,9 +38,10 @@ public class SSHSession extends Session
     {
 	try
 	{
-	    session.execCommand(cmd);
+	    session.setCommand(cmd);
+	    session.connect();
 	}
-	catch (IOException ex)
+	catch (JSchException ex)
 	{
 	    Logger.getLogger(SSHSession.class.getName()).log(Level.SEVERE, null, ex);
 	}
@@ -47,6 +50,6 @@ public class SSHSession extends Session
     @Override
     public void closeSession()
     {
-	session.close();
+	session.disconnect();
     }
 }

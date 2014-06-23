@@ -1,5 +1,6 @@
 package logfilter;
 
+import java.awt.Color;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,9 +20,10 @@ public class Log implements Serializable
 	// Create a new default exceptions filter for any new log file
 	Filter exceptionFilter = new Filter("Exceptions");
 	exceptionFilter.setEnabled(true);
+	exceptionFilter.setHighlightColor(Color.RED);
 	exceptionFilter.setKeyword("exception");
-	exceptionFilter.setLinesAfter(10);
-	exceptionFilter.setLinesBefore(10);
+	exceptionFilter.setMessagesAfter(5);
+	exceptionFilter.setMessagesBefore(5);
 	filterMap.put(exceptionFilter.getName(), exceptionFilter);
 
 	filePath = "";
@@ -31,7 +33,14 @@ public class Log implements Serializable
     public Log(Log log)
     {
 	name = log.name;
-	filterMap = new HashMap<>(log.filterMap);
+	filterMap = new HashMap<>();
+
+	for (Filter f : log.filterMap.values())
+	{
+	    Filter newFilter = new Filter(f);
+	    filterMap.put(newFilter.getName(), newFilter);
+	}
+
 	filePath = log.filePath;
 	namePrefix = log.namePrefix;
     }

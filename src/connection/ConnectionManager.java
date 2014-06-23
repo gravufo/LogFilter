@@ -8,6 +8,7 @@ import java.util.Map;
 import logfilter.Log;
 import logfilter.Server;
 import persistence.Preferences;
+import ui.MainWindow;
 
 /**
  * Connection Manager manages connections to servers and (de)registers them
@@ -21,6 +22,7 @@ public class ConnectionManager
     private Map<String, Map<String, ServerConnection>> connectionsMap;
     private RemoteConsumerManager remoteConsumerManager;
     private static ConnectionManager instance = null;
+    private boolean isConnectionActive;
 
     /**
      * Private constructor. Will only be called once, because of the Singleton
@@ -29,6 +31,7 @@ public class ConnectionManager
     {
 	remoteConsumerManager = RemoteConsumerManager.getInstance();
 	connectionsMap = new HashMap<>();
+	isConnectionActive = false;
     }
 
     public static ConnectionManager getInstance()
@@ -111,6 +114,11 @@ public class ConnectionManager
     {
 	boolean success = true;
 
+	if (isConnectionActive)
+	{
+	    MainWindow.writeToConsole("\nMonitoring daemon stopped for:\n");
+	}
+
 	// For every server
 	for (Map.Entry<String, Map<String, ServerConnection>> entry : new HashSet<>(connectionsMap.entrySet()))
 	{
@@ -120,6 +128,8 @@ public class ConnectionManager
 		success = false;
 	    }
 	}
+
+	isConnectionActive = false;
 
 	return success;
     }
@@ -259,6 +269,8 @@ public class ConnectionManager
     {
 	boolean success = true;
 
+	isConnectionActive = true;
+
 	// Map.Entry<K, V> entry : map.entrySet()
 	for (Map.Entry<String, Map<String, ServerConnection>> sc : connectionsMap.entrySet())
 	{
@@ -267,6 +279,7 @@ public class ConnectionManager
 		if (!startConnection(sc.getKey(), connection.getKey(), connection.getValue()))
 		{
 		    success = false;
+		    isConnectionActive = false;
 		}
 	    }
 	}
@@ -338,6 +351,8 @@ public class ConnectionManager
      */
     public void executeCommands()
     {
+	MainWindow.writeToConsole("Monitoring daemons started for...\n");
+
 	for (Map.Entry<String, Map<String, ServerConnection>> sc : connectionsMap.entrySet())
 	{
 	    for (Map.Entry<String, ServerConnection> connection : sc.getValue().entrySet())

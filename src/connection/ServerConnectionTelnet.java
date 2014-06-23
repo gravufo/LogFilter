@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.net.PasswordAuthentication;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import ui.MainWindow;
 
 /**
  * This class represents a Telnet connection to a server
@@ -28,7 +29,21 @@ public class ServerConnectionTelnet extends ServerConnection
     {
 	try
 	{
+//	    TerminalTypeOptionHandler ttopt = new TerminalTypeOptionHandler("VT100", false, false, true, false);
+//	    EchoOptionHandler echoopt = new EchoOptionHandler(true, false, true, false);
+//	    SuppressGAOptionHandler gaopt = new SuppressGAOptionHandler(true, true, true, true);
+//
+//	    ((TelnetSession) session).getSession().addOptionHandler(ttopt);
+//	    ((TelnetSession) session).getSession().addOptionHandler(echoopt);
+//	    ((TelnetSession) session).getSession().addOptionHandler(gaopt);
+
 	    ((TelnetSession) session).getSession().connect(hostname, DEFAULT_TELNET_PORT);
+
+	    // Test if the connection is open
+	    if (!((TelnetSession) session).getSession().sendAYT(5000))
+	    {
+		throw new IOException(hostname + ": Connection failed. Host not found or connection refused.\n");
+	    }
 
 	    InputStream in = ((TelnetSession) session).getSession().getInputStream();
 	    PrintStream out = new PrintStream(((TelnetSession) session).getSession().getOutputStream());
@@ -37,21 +52,32 @@ public class ServerConnectionTelnet extends ServerConnection
 //	    ((TelnetSession) session).setInputStream(in);
 
             // Log the user on
-            readUntil("login: ", in);
+            ((TelnetSession) session).readUntil("login: ", in);
 	    out.println(account.getUserName());
 	    out.flush();
 
-	    readUntil("Password: ", in);
+	    ((TelnetSession) session).readUntil("Password: ", in);
 	    out.println(account.getPassword());
 	    out.flush();
 
             // Advance to a prompt
-            readUntil("$", in);
+            if (((TelnetSession) session).readUntil("$", in) == null)
+	    {
+		MainWindow.writeToConsole("The username or password is incorrect\n");
+	    }
+
+	    session.execCommand("stty -echo");
+
+	    ((TelnetSession) session).readUntil("$ ", ((TelnetSession) session).getSession().getInputStream());
 	}
 	catch (IOException ex)
 	{
-	    Logger.getLogger(ServerConnectionTelnet.class.getName()).log(Level.SEVERE, null, ex);
+	    MainWindow.writeToConsole(ex.getMessage());
 	    return false;
+	}
+	catch (IllegalArgumentException | InterruptedException ex)
+	{
+	    Logger.getLogger(ServerConnectionTelnet.class.getName()).log(Level.SEVERE, null, ex);
 	}
 
 	return connected = true;
@@ -99,34 +125,5 @@ public class ServerConnectionTelnet extends ServerConnection
 		Logger.getLogger(ServerConnectionTelnet.class.getName()).log(Level.SEVERE, null, ex);
 	    }
 	}
-    }
-
-    public String readUntil(String pattern, InputStream in)
-    {
-	try
-	{
-	    char lastChar = pattern.charAt(pattern.length() - 1);
-	    StringBuilder sb = new StringBuilder();
-
-	    char ch = (char) in.read();
-	    while (true)
-	    {
-		sb.append(ch);
-		if (ch == lastChar)
-		{
-		    if (sb.toString().endsWith(pattern))
-		    {
-			return sb.toString();
-		    }
-		}
-		ch = (char) in.read();
-	    }
-	}
-	catch (IOException ex)
-	{
-	    Logger.getLogger(ServerConnectionTelnet.class.getName()).log(Level.SEVERE, null, ex);
-	}
-
-	return null;
     }
 }

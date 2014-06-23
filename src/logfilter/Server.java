@@ -27,6 +27,15 @@ public class Server implements Serializable
 	this.hostname = hostname;
 	this.logList = new ArrayList<>(server.logList);
     }
+
+    public Server(Server server)
+    {
+	this.enabled = server.enabled;
+	this.useSSH = server.useSSH;
+	this.name = server.name;
+	this.hostname = server.hostname;
+	this.logList = new ArrayList<>(server.logList);
+    }
     
     public String getHostname()
     {
@@ -78,9 +87,24 @@ public class Server implements Serializable
 	return logList.remove(name);
     }
 
+    public void removeAllLogs()
+    {
+	logList.clear();
+    }
+
     public ArrayList<String> getLogList()
     {
 	return logList;
+    }
+
+    public boolean isMonitorAlarms()
+    {
+	return monitorAlarms;
+    }
+
+    public void setMonitorAlarms(boolean monitorAlarms)
+    {
+	this.monitorAlarms = monitorAlarms;
     }
 
     /**
@@ -110,4 +134,9 @@ public class Server implements Serializable
      * Contains the name of the profile.
      */
     private String name;
+
+    /**
+     * Determines whether we should monitor alarms on this server
+     */
+    private boolean monitorAlarms;
 }

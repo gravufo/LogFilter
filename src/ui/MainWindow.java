@@ -24,7 +24,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -34,7 +34,9 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
+import javax.swing.text.Document;
 import javax.swing.text.DocumentFilter;
+import javax.swing.text.Element;
 import logfilter.Server;
 import persistence.Preferences;
 
@@ -71,9 +73,9 @@ public class MainWindow extends JFrame
 	}
 
 	// Set the document filter to limit the number of lines
-	((AbstractDocument) jTextAreaOutput.getDocument()).setDocumentFilter(new ConsoleDocumentFilter(jTextAreaOutput, Preferences.getInstance().getMaxNumLines()));
+	((AbstractDocument) jTextPaneOutput.getDocument()).setDocumentFilter(new ConsoleDocumentFilter(jTextPaneOutput, Preferences.getInstance().getMaxNumLines()));
 
-	jTextAreaOutput.getDocument().addDocumentListener(new DocumentListener()
+	jTextPaneOutput.getDocument().addDocumentListener(new DocumentListener()
 	{
 
 	    @Override
@@ -81,7 +83,21 @@ public class MainWindow extends JFrame
 	    {
 		if (!isFocused() && Preferences.getInstance().isFlashTaskbar())
 		{
-		    toFront();
+		    try
+		    {
+			// Verify if the modification is a message from the server
+			String modification = de.getDocument().getText(de.getOffset(), de.getLength());
+
+			if (modification.contains("-------------------------------"))
+			{
+			    // If it is, then it is relevant enough to flash taskbar
+			    toFront();
+			}
+		    }
+		    catch (BadLocationException ex)
+		    {
+			Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+		    }
 		}
 	    }
 
@@ -97,28 +113,31 @@ public class MainWindow extends JFrame
 	});
 
 	// Disable the auto scroll EDIT: Don't, we want to be able to write correctly.
-	((DefaultCaret) jTextAreaOutput.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+//	((DefaultCaret) jTextPaneOutput.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+//	jScrollPaneOutput.getVerticalScrollBar().getModel().setValue(jScrollPaneOutput.getVerticalScrollBar().getModel().getMaximum() - jScrollPaneOutput.getVerticalScrollBar().getModel().getExtent());
+
 	// Set the listener for the scrollpane to enhance auto-scroll functionality
-	jScrollPaneOutputText.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener()
+	jScrollPaneOutput.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener()
 	{
 	    private int _val = 0;
 	    private int _ext = 0;
 	    private int _max = 0;
 
-	    private final BoundedRangeModel _model = jScrollPaneOutputText.getVerticalScrollBar().getModel();
+	    private final BoundedRangeModel _model = jScrollPaneOutput.getVerticalScrollBar().getModel();
 
 	    @Override
 	    public void adjustmentValueChanged(AdjustmentEvent e)
 	    {
-		((DefaultCaret) jTextAreaOutput.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+//		((DefaultCaret) jTextPaneOutput.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 
 		// Get the new max :
 		int newMax = _model.getMaximum();
 
-		// If the new max has changed and if we were scrolled to bottom :
+		// If the new max has changed and if we were scrolled to bottom
 		if (newMax != _max && (_val + _ext == _max))
 		{
-		    // Scroll to bottom :
+		    // Scroll to bottom
 		    _model.setValue(_model.getMaximum() - _model.getExtent());
 		}
 
@@ -126,6 +145,8 @@ public class MainWindow extends JFrame
 		_val = _model.getValue();
 		_ext = _model.getExtent();
 		_max = _model.getMaximum();
+
+//		((DefaultCaret) jTextPaneOutput.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 	    }
 	});
 
@@ -164,7 +185,7 @@ public class MainWindow extends JFrame
 		    Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
 		}
 
-		if (jTextAreaOutput.getSelectedText() == null || jTextAreaOutput.getSelectedText().isEmpty())
+		if (jTextPaneOutput.getSelectedText() == null || jTextPaneOutput.getSelectedText().isEmpty())
 		{
 		    jMenuClear.setText("Clear screen");
 		    jMenuCopy.setEnabled(false);
@@ -228,14 +249,14 @@ public class MainWindow extends JFrame
 	jPopupTerminal.add(jMenuCopy);
 	jPopupTerminal.add(jMenuPaste);
 
-	jTextAreaOutput.setComponentPopupMenu(jPopupTerminal);
+	jTextPaneOutput.setComponentPopupMenu(jPopupTerminal);
 
 	// Remove Java icon in title bar and place a crappy looking custom one
 	ImageIcon img = new ImageIcon(getClass().getResource("/images/Log_icon.png"));
 	setIconImage(img.getImage());
 
 	// Set the console to output on
-	RemoteConsumerManager.getInstance().setConsole(jTextAreaOutput);
+	RemoteConsumerManager.getInstance().setConsole(jTextPaneOutput);
 
 	// Initialise the connection manager
 	connectionManager = ConnectionManager.getInstance();
@@ -285,11 +306,23 @@ public class MainWindow extends JFrame
 	}
 
 	// Update the maximum number of lines from the prefs in case it changed
-	((AbstractDocument) jTextAreaOutput.getDocument()).setDocumentFilter(new ConsoleDocumentFilter(jTextAreaOutput, Preferences.getInstance().getMaxNumLines()));
+	((AbstractDocument) jTextPaneOutput.getDocument()).setDocumentFilter(new ConsoleDocumentFilter(jTextPaneOutput, Preferences.getInstance().getMaxNumLines()));
 
-	jTextAreaOutput.setFont(Preferences.getInstance().getTerminalFont());
-	jTextAreaOutput.setForeground(Preferences.getInstance().getForegroundColor());
-	jTextAreaOutput.setBackground(Preferences.getInstance().getBackgroundColor());
+	jTextPaneOutput.setFont(Preferences.getInstance().getTerminalFont());
+	jTextPaneOutput.setForeground(Preferences.getInstance().getForegroundColor());
+	jTextPaneOutput.setBackground(Preferences.getInstance().getBackgroundColor());
+
+	if (Preferences.getInstance().isOutputToDisk())
+	{
+	    if (!persistence.Logger.getInstance().isOpen())
+	    {
+		persistence.Logger.getInstance().open(Preferences.getInstance().getLogPath());
+	    }
+	}
+	else if (persistence.Logger.getInstance().isOpen())
+	{
+	    persistence.Logger.getInstance().close();
+	}
     }
 
     private void terminationCleanup()
@@ -300,6 +333,11 @@ public class MainWindow extends JFrame
 	    public void run()
 	    {
 		connectionManager.removeConnections();
+
+		if (persistence.Logger.getInstance().isOpen())
+		{
+		    persistence.Logger.getInstance().close();
+		}
 	    }
 	}).start();
 
@@ -313,29 +351,32 @@ public class MainWindow extends JFrame
 
     private void selectAll()
     {
-	jTextAreaOutput.setSelectionStart(0);
-	jTextAreaOutput.setSelectionEnd(jTextAreaOutput.getText().length());
+	jTextPaneOutput.setSelectionStart(0);
+	jTextPaneOutput.setSelectionEnd(jTextPaneOutput.getText().length());
     }
 
     private void clearSelection()
     {
-	if (jTextAreaOutput.getSelectedText() == null)
+	if (jTextPaneOutput.getSelectedText() == null)
 	{
-	    jTextAreaOutput.setText("");
-	    jTextAreaOutput.setSelectionStart(0);
-	    jTextAreaOutput.setSelectionEnd(0);
+	    jTextPaneOutput.setText("");
+	    jTextPaneOutput.setSelectionStart(0);
+	    jTextPaneOutput.setSelectionEnd(0);
+
+	    // Reset scroll bar to minimum
+//	    jScrollPaneOutput.getVerticalScrollBar().getModel().setValue(jScrollPaneOutput.getVerticalScrollBar().getModel().getMaximum() - jScrollPaneOutput.getVerticalScrollBar().getModel().getExtent());
 	}
 	else
 	{
-	    jTextAreaOutput.replaceSelection("");
-	    jTextAreaOutput.setSelectionStart(jTextAreaOutput.getCaretPosition());
-	    jTextAreaOutput.setSelectionEnd(jTextAreaOutput.getCaretPosition());
+	    jTextPaneOutput.replaceSelection("");
+	    jTextPaneOutput.setSelectionStart(jTextPaneOutput.getCaretPosition());
+	    jTextPaneOutput.setSelectionEnd(jTextPaneOutput.getCaretPosition());
 	}
     }
 
     private void copy()
     {
-	StringSelection selection = new StringSelection(jTextAreaOutput.getSelectedText());
+	StringSelection selection = new StringSelection(jTextPaneOutput.getSelectedText());
 	Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 	clipboard.setContents(selection, selection);
     }
@@ -349,16 +390,16 @@ public class MainWindow extends JFrame
 	    try
 	    {
 		Object o = t.getTransferData(DataFlavor.stringFlavor);
-		if (jTextAreaOutput.getSelectedText() == null || jTextAreaOutput.getSelectedText().isEmpty())
+		if (jTextPaneOutput.getSelectedText() == null || jTextPaneOutput.getSelectedText().isEmpty())
 		{
-		    jTextAreaOutput.insert((String) o, jTextAreaOutput.getCaretPosition());
+		    jTextPaneOutput.getDocument().insertString(jTextPaneOutput.getCaretPosition(), (String) o, null);
 		}
 		else
 		{
-		    jTextAreaOutput.replaceSelection((String) o);
+		    jTextPaneOutput.replaceSelection((String) o);
 		}
 	    }
-	    catch (UnsupportedFlavorException | IOException ex)
+	    catch (UnsupportedFlavorException | IOException | BadLocationException ex)
 	    {
 		Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
 	    }
@@ -370,14 +411,30 @@ public class MainWindow extends JFrame
 	// Re-enable the connect button if it was disabled
 	if (jButtonDisconnect.isEnabled())
 	{
-	    jButtonConnect.setEnabled(true);
-	    jButtonRefresh.setEnabled(false);
-	    jButtonDisconnect.setEnabled(false);
-	    jTextAreaOutput.append("\n\nDisconnected.\n\n");
+	    try
+	    {
+		jButtonConnect.setEnabled(true);
+		jButtonRefresh.setEnabled(false);
+		jButtonDisconnect.setEnabled(false);
 
-	    // Verify if there is a connection alive - kill it if so
-	    connectionManager.removeConnections();
-	    jTextAreaOutput.append("\nMonitoring daemon stopped for:\n");
+		Document doc = jTextPaneOutput.getDocument();
+		doc.insertString(doc.getLength(), "\nDisconnected.\n\n", null);
+
+//		new Thread(new Runnable()
+//		{
+//		    @Override
+//		    public void run()
+//		    {
+			// Verify if there is a connection alive - kill it if so
+			connectionManager.removeConnections();
+			connectionManager.addConnections(serverList, Preferences.getInstance().getServerAccount());
+//		    }
+//		}).start();
+	    }
+	    catch (BadLocationException ex)
+	    {
+		Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+	    }
 	}
     }
 
@@ -387,7 +444,15 @@ public class MainWindow extends JFrame
 	jButtonRefresh.setEnabled(true);
 	jButtonDisconnect.setEnabled(true);
 
-	jTextAreaOutput.append("\nInitiating connections...\n");
+	try
+	{
+	    Document doc = jTextPaneOutput.getDocument();
+	    doc.insertString(doc.getLength(), "\nInitiating connections...\n", null);
+	}
+	catch (BadLocationException ex)
+	{
+	    Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+	}
 
 	new Thread()
 	{
@@ -401,11 +466,17 @@ public class MainWindow extends JFrame
 			@Override
 			public void run()
 			{
-			    jTextAreaOutput.append("Connections successful!\n");
+			    try
+			    {
+				Document doc = jTextPaneOutput.getDocument();
+				doc.insertString(doc.getLength(), "Connections successful!\n", null);
 
-			    jTextAreaOutput.append("Starting monitoring daemons...\n\n");
-
-			    jTextAreaOutput.append("Monitoring daemon started for:\n");
+				doc.insertString(doc.getLength(), "Starting monitoring daemons...\n\n", null);
+			    }
+			    catch (BadLocationException ex)
+			    {
+				Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+			    }
 			}
 		    });
 
@@ -418,12 +489,19 @@ public class MainWindow extends JFrame
 			@Override
 			public void run()
 			{
-			    jTextAreaOutput.append("Connections failed...aborting\n\n");
+			    try
+			    {
+				Document doc = jTextPaneOutput.getDocument();
+				doc.insertString(doc.getLength(), "Connections failed...aborting\n\n", null);
+			    }
+			    catch (BadLocationException ex)
+			    {
+				Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+			    }
 			}
 		    });
 
-		    connectionManager.removeConnections();
-		    connectionManager.addConnections(serverList, Preferences.getInstance().getServerAccount());
+		    disconnect();
 		}
 	    }
 	}.start();
@@ -442,12 +520,12 @@ public class MainWindow extends JFrame
 
         jPanelRoot = new javax.swing.JPanel();
         jButtonConnect = new javax.swing.JButton();
-        jScrollPaneOutputText = new javax.swing.JScrollPane();
-        jTextAreaOutput = new javax.swing.JTextArea();
         jLabelServersToMonitor = new javax.swing.JLabel();
         jTextFieldServersToMonitor = new javax.swing.JTextField();
         jButtonRefresh = new javax.swing.JButton();
         jButtonDisconnect = new javax.swing.JButton();
+        jScrollPaneOutput = new javax.swing.JScrollPane();
+        jTextPaneOutput = new javax.swing.JTextPane();
         jMenuBarMain = new javax.swing.JMenuBar();
         jMenuFile = new javax.swing.JMenu();
         jMenuItemExit = new javax.swing.JMenuItem();
@@ -457,7 +535,7 @@ public class MainWindow extends JFrame
         jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Log Monitor");
+        setTitle("Broadsoft Test Monitoring Tool");
         setFocusTraversalPolicyProvider(true);
         addComponentListener(new java.awt.event.ComponentAdapter()
         {
@@ -489,22 +567,6 @@ public class MainWindow extends JFrame
             }
         });
 
-        jTextAreaOutput.setBackground(new java.awt.Color(0, 0, 0));
-        jTextAreaOutput.setColumns(20);
-        jTextAreaOutput.setForeground(new java.awt.Color(0, 255, 0));
-        jTextAreaOutput.setLineWrap(true);
-        jTextAreaOutput.setRows(5);
-        jTextAreaOutput.setWrapStyleWord(true);
-        jTextAreaOutput.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
-        jTextAreaOutput.addKeyListener(new java.awt.event.KeyAdapter()
-        {
-            public void keyTyped(java.awt.event.KeyEvent evt)
-            {
-                jTextAreaOutputKeyTyped(evt);
-            }
-        });
-        jScrollPaneOutputText.setViewportView(jTextAreaOutput);
-
         jLabelServersToMonitor.setLabelFor(jTextFieldServersToMonitor);
         jLabelServersToMonitor.setText("Servers to monitor:");
         jLabelServersToMonitor.setFocusable(false);
@@ -514,6 +576,7 @@ public class MainWindow extends JFrame
         jTextFieldServersToMonitor.setFocusable(false);
 
         jButtonRefresh.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/refresh-icon.png"))); // NOI18N
+        jButtonRefresh.setToolTipText("Forces a verification of newer versions of the log files being monitored");
         jButtonRefresh.setEnabled(false);
         jButtonRefresh.addActionListener(new java.awt.event.ActionListener()
         {
@@ -533,14 +596,30 @@ public class MainWindow extends JFrame
             }
         });
 
+        jTextPaneOutput.setBackground(new java.awt.Color(0, 0, 0));
+        jTextPaneOutput.setForeground(new java.awt.Color(0, 255, 0));
+        jTextPaneOutput.addKeyListener(new java.awt.event.KeyAdapter()
+        {
+            public void keyPressed(java.awt.event.KeyEvent evt)
+            {
+                jTextPaneOutputKeyPressed(evt);
+            }
+            public void keyTyped(java.awt.event.KeyEvent evt)
+            {
+                jTextPaneOutputKeyTyped(evt);
+            }
+        });
+        jScrollPaneOutput.setViewportView(jTextPaneOutput);
+
         javax.swing.GroupLayout jPanelRootLayout = new javax.swing.GroupLayout(jPanelRoot);
         jPanelRoot.setLayout(jPanelRootLayout);
         jPanelRootLayout.setHorizontalGroup(
             jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanelRootLayout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelRootLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanelRootLayout.createSequentialGroup()
+                .addGroup(jPanelRootLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jScrollPaneOutput)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelRootLayout.createSequentialGroup()
                         .addComponent(jLabelServersToMonitor)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jTextFieldServersToMonitor, javax.swing.GroupLayout.DEFAULT_SIZE, 316, Short.MAX_VALUE)
@@ -549,8 +628,7 @@ public class MainWindow extends JFrame
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jButtonDisconnect)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jButtonRefresh))
-                    .addComponent(jScrollPaneOutputText))
+                        .addComponent(jButtonRefresh)))
                 .addContainerGap())
         );
         jPanelRootLayout.setVerticalGroup(
@@ -564,8 +642,8 @@ public class MainWindow extends JFrame
                         .addComponent(jTextFieldServersToMonitor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addComponent(jButtonDisconnect))
                     .addComponent(jButtonRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPaneOutputText, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPaneOutput, javax.swing.GroupLayout.DEFAULT_SIZE, 423, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -605,6 +683,13 @@ public class MainWindow extends JFrame
         jMenuHelp.setText("Help");
 
         jMenuItem1.setText("About...");
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
         jMenuHelp.add(jMenuItem1);
 
         jMenuBarMain.add(jMenuHelp);
@@ -674,23 +759,27 @@ public class MainWindow extends JFrame
 	}
     }//GEN-LAST:event_formComponentResized
 
-    private void jTextAreaOutputKeyTyped(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextAreaOutputKeyTyped
-    {//GEN-HEADEREND:event_jTextAreaOutputKeyTyped
-//        Point newPosition = jTextAreaOutput.getLocation();
-//
-//	if(evt.getK)
-//
-//	jTextAreaOutput.getCaret().setMagicCaretPosition();
-
-	// Small hack to make the writing work WITH the custom auto scrolling
-	DefaultCaret caret = (DefaultCaret) jTextAreaOutput.getCaret();
-	caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-    }//GEN-LAST:event_jTextAreaOutputKeyTyped
-
     private void jButtonDisconnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonDisconnectActionPerformed
     {//GEN-HEADEREND:event_jButtonDisconnectActionPerformed
-        disconnect();
+	disconnect();
     }//GEN-LAST:event_jButtonDisconnectActionPerformed
+
+    private void jTextPaneOutputKeyTyped(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextPaneOutputKeyTyped
+    {//GEN-HEADEREND:event_jTextPaneOutputKeyTyped
+	
+    }//GEN-LAST:event_jTextPaneOutputKeyTyped
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItem1ActionPerformed
+    {//GEN-HEADEREND:event_jMenuItem1ActionPerformed
+	new AboutDialog(this, true).setVisible(true);
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void jTextPaneOutputKeyPressed(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextPaneOutputKeyPressed
+    {//GEN-HEADEREND:event_jTextPaneOutputKeyPressed
+        // Small hack to make the writing work WITH the custom auto scrolling
+//	DefaultCaret caret = (DefaultCaret) jTextPaneOutput.getCaret();
+//	caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+    }//GEN-LAST:event_jTextPaneOutputKeyPressed
 
     /**
      * This class represents a filter for the number of lines to display in the
@@ -698,12 +787,12 @@ public class MainWindow extends JFrame
      */
     public class ConsoleDocumentFilter extends DocumentFilter
     {
-	private JTextArea console;
-	private int max;
+	private JTextPane console;
+	private final int max;
 
-	public ConsoleDocumentFilter(JTextArea console, int max)
+	public ConsoleDocumentFilter(JTextPane console, int max)
 	{
-	    this.console = console;
+	    this.console = jTextPaneOutput;
 	    this.max = max;
 	}
 
@@ -711,13 +800,22 @@ public class MainWindow extends JFrame
 	public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException
 	{
 	    super.replace(fb, offset, length, text, attrs);
-	    int lines = console.getLineCount();
+	    int lines = console.getDocument().getDefaultRootElement().getElementCount();
 
 	    if (lines > max)
 	    {
-		int linesToRemove = lines - max - 1;
-		int lengthToRemove = console.getLineStartOffset(linesToRemove);
-		remove(fb, 0, lengthToRemove);
+		int linesToRemove = lines - max;
+
+		Element map = console.getDocument().getDefaultRootElement();
+		Element lineElem = map.getElement(linesToRemove);
+
+		int lengthToRemove = lineElem.getStartOffset();
+
+		((DefaultCaret) jTextPaneOutput.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+		super.remove(fb, 0, lengthToRemove);
+		((DefaultCaret) jTextPaneOutput.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+//		jScrollPaneOutput.getVerticalScrollBar().getAdjustmentListeners()[0].adjustmentValueChanged(null);
 	    }
 	}
 
@@ -727,14 +825,54 @@ public class MainWindow extends JFrame
 	    try
 	    {
 		super.insertString(fb, offset, string, attr);
-		int lines = console.getLineCount();
+		int lines = console.getDocument().getDefaultRootElement().getElementCount();
 
 		if (lines > max)
 		{
-		    int linesToRemove = lines - max - 1;
-		    int lengthToRemove = console.getLineStartOffset(linesToRemove);
-		    remove(fb, 0, lengthToRemove);
+		    int linesToRemove = lines - max;
+
+		    Element map = console.getDocument().getDefaultRootElement();
+		    Element lineElem = map.getElement(linesToRemove);
+
+		    int lengthToRemove = lineElem.getStartOffset();
+
+		    ((DefaultCaret) jTextPaneOutput.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+		    super.remove(fb, 0, lengthToRemove);
+		    ((DefaultCaret) jTextPaneOutput.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+//		    jScrollPaneOutput.getVerticalScrollBar().getAdjustmentListeners()[0].adjustmentValueChanged(null);
 		}
+	    }
+	    catch (BadLocationException ex)
+	    {
+		Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+	    }
+	}
+
+//	@Override
+//	public void remove(FilterBypass fb, int offset, int length)
+//	{
+//	    try
+//	    {
+//		super.remove(fb, id, id);
+//
+//		jScrollPaneOutput.getVerticalScrollBar().getAdjustmentListeners()[0].adjustmentValueChanged(null);
+//	    }
+//	    catch (BadLocationException ex)
+//	    {
+//		Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+//	    }
+//	}
+    }
+
+    public static void writeToConsole(String text)
+    {
+	if (jTextPaneOutput != null)
+	{
+	    try
+	    {
+		Document doc = jTextPaneOutput.getStyledDocument();
+		doc.insertString(doc.getLength(), text, null);
 	    }
 	    catch (BadLocationException ex)
 	    {
@@ -756,9 +894,9 @@ public class MainWindow extends JFrame
     private javax.swing.JMenuItem jMenuItemExit;
     private javax.swing.JMenuItem jMenuItemPreferences;
     private javax.swing.JPanel jPanelRoot;
-    private javax.swing.JScrollPane jScrollPaneOutputText;
-    private javax.swing.JTextArea jTextAreaOutput;
+    private javax.swing.JScrollPane jScrollPaneOutput;
     private javax.swing.JTextField jTextFieldServersToMonitor;
+    private static javax.swing.JTextPane jTextPaneOutput;
     // End of variables declaration//GEN-END:variables
 
     private final int id = 0;

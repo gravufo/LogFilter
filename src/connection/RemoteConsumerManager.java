@@ -3,8 +3,9 @@ package connection;
 import collections.Pair;
 import java.util.HashMap;
 import java.util.Map;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import persistence.Preferences;
+import ui.MainWindow;
 
 /**
  * This class manages the RemoteConsumer instances for each session (and in our
@@ -17,7 +18,7 @@ public class RemoteConsumerManager
 {
     private Map<String, Map<String, Pair<Session, RemoteConsumer>>> remoteConsumerMap;
     private static RemoteConsumerManager instance = null;
-    private JTextArea console;
+    private JTextPane console;
 
     /**
      * Private constructor, will only be called once: Singleton
@@ -110,6 +111,16 @@ public class RemoteConsumerManager
 	// Stop the consumer from its infinite loop
 	temp.getValue().stopConsumer();
 
+	try
+	{
+	    temp.getValue().join(500);
+	}
+	catch (InterruptedException ex)
+	{
+	    MainWindow.writeToConsole("Connection killed: " + serverName + ":" + logName + "\n");
+	    temp.getValue().stop();
+	}
+
 	if (server.isEmpty())
 	{
 	    remoteConsumerMap.remove(serverName);
@@ -121,7 +132,7 @@ public class RemoteConsumerManager
      *
      * @param console JTextArea that will contain the output
      */
-    public void setConsole(JTextArea console)
+    public void setConsole(JTextPane console)
     {
 	this.console = console;
     }

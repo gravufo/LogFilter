@@ -2,6 +2,7 @@ package ui;
 
 import collections.Pair;
 import java.awt.AWTKeyStroke;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.KeyboardFocusManager;
@@ -99,10 +100,6 @@ public class PreferencesDialog extends javax.swing.JDialog
 	jListServers.setSelectedIndex(0);
 	jListTemplateLogFiles.setSelectedIndex(0);
 
-	jTextFieldServerUsername.setText(Preferences.getInstance().getServerAccount().getUserName());
-	jPasswordFieldServerPassword.setText(String.valueOf(Preferences.getInstance().getServerAccount().getPassword()));
-	jSpinnerMaxNumLines.setValue(Preferences.getInstance().getMaxNumLines());
-
 	// Set the escape character to close the dialog
 	ActionListener escListener = new ActionListener()
 	{
@@ -117,6 +114,8 @@ public class PreferencesDialog extends javax.swing.JDialog
 
 	// Make CTRL-TAB and CTRL-SHIFT-TAB work
 	setupTabTraversalKeys(jTabbedPaneRoot);
+
+	loadMiscellaneous();
     }
 
     public void showDialog()
@@ -250,6 +249,8 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jTextFieldLogFileFilterKeyword.setText("");
 	    jSpinnerLogFileFilterPrePrint.setValue(0);
 	    jSpinnerLogFileFilterPostPrint.setValue(0);
+
+	    jColorFieldHighlight.setBackground(Color.WHITE);
 	}
 	else
 	{
@@ -267,8 +268,10 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jCheckBoxLogFileFilterEnabled.setSelected(filter.isEnabled());
 	    jTextFieldLogFileFilterName.setText(filter.getName());
 	    jTextFieldLogFileFilterKeyword.setText(filter.getKeyword());
-	    jSpinnerLogFileFilterPrePrint.setValue(filter.getLinesBefore());
+	    jSpinnerLogFileFilterPrePrint.setValue(filter.getMessagesBefore());
 	    jSpinnerLogFileFilterPostPrint.setValue(filter.getMessagesAfter());
+
+	    jColorFieldHighlight.setBackground(filter.getHighlightColor());
 	}
     }
 
@@ -292,6 +295,29 @@ public class PreferencesDialog extends javax.swing.JDialog
 
 	    jButtonRemoveLogFile.setEnabled(true);
 	}
+    }
+
+    private void loadMiscellaneous()
+    {
+	jTextFieldServerUsername.setText(Preferences.getInstance().getServerAccount().getUserName());
+	jPasswordFieldServerPassword.setText(String.valueOf(Preferences.getInstance().getServerAccount().getPassword()));
+	jSpinnerMaxNumLines.setValue(Preferences.getInstance().getMaxNumLines());
+	jSpinnerAutoRefresh.setValue(Preferences.getInstance().getRefreshInterval());
+	jColorFieldBackground.setBackground(Preferences.getInstance().getBackgroundColor());
+	jColorFieldForeground.setBackground(Preferences.getInstance().getForegroundColor());
+	jCheckBoxLogToDisk.setSelected(Preferences.getInstance().isOutputToDisk());
+	jCheckBoxFlashTaskbar.setSelected(Preferences.getInstance().isFlashTaskbar());
+    }
+
+    private void ensureConsistency()
+    {
+	jTextFieldLogFileFilterName.getFocusListeners()[0].focusLost(null);
+	jTextFieldLogFileFilterKeyword.getFocusListeners()[0].focusLost(null);
+	jTextFieldLogFileName.getFocusListeners()[0].focusLost(null);
+	jTextFieldLogFilePath.getFocusListeners()[0].focusLost(null);
+	jTextFieldLogFilePrefix.getFocusListeners()[0].focusLost(null);
+	jTextFieldServerUsername.getFocusListeners()[0].focusLost(null);
+	jPasswordFieldServerPassword.getFocusListeners()[0].focusLost(null);
     }
 
     private void cancel()
@@ -408,6 +434,9 @@ public class PreferencesDialog extends javax.swing.JDialog
         jTextFieldLogFileFilterKeyword = new javax.swing.JTextField();
         jLabelLogFileFilterName = new javax.swing.JLabel();
         jTextFieldLogFileFilterName = new javax.swing.JTextField();
+        jLabelHighlightColor = new javax.swing.JLabel();
+        jColorFieldHighlight = new javax.swing.JTextField();
+        jButtonHighlightColor = new javax.swing.JButton();
         jLabelLogFileAlias = new javax.swing.JLabel();
         jTextFieldLogFileName = new javax.swing.JTextField();
         jButtonTemplateLogFileAdd = new javax.swing.JButton();
@@ -430,6 +459,11 @@ public class PreferencesDialog extends javax.swing.JDialog
         jCheckBoxFlashTaskbar = new javax.swing.JCheckBox();
         jLabelFont = new javax.swing.JLabel();
         jButtonFont = new javax.swing.JButton();
+        jLabelAutoRefresh = new javax.swing.JLabel();
+        jSpinnerAutoRefresh = new javax.swing.JSpinner();
+        jColorFieldForeground = new javax.swing.JTextField();
+        jColorFieldBackground = new javax.swing.JTextField();
+        jCheckBoxLogToDisk = new javax.swing.JCheckBox();
         jButtonCancel = new javax.swing.JButton();
         jButtonOK = new javax.swing.JButton();
 
@@ -713,17 +747,18 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jLabelTemplateLogFiles.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
         jLabelTemplateLogFiles.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabelTemplateLogFiles.setText("Log Files");
+        jLabelTemplateLogFiles.setText("Template Log Files");
         jLabelTemplateLogFiles.setFocusable(false);
 
         jPanelTemplateLogFileProperties.setBackground(new java.awt.Color(204, 204, 204));
 
-        jLabelTemplateLogFileName.setText("Prefix of the log file:");
+        jLabelTemplateLogFileName.setText("Prefix of the log file name:");
         jLabelTemplateLogFileName.setFocusable(false);
 
         jLabelTemplateLogFilePath.setText("Path to the log file location:");
         jLabelTemplateLogFilePath.setFocusable(false);
 
+        jTextFieldLogFilePath.setToolTipText("Absolute path to the log file (including trailing slash)");
         jTextFieldLogFilePath.setEnabled(false);
         jTextFieldLogFilePath.setNextFocusableComponent(jListLogFileFilters);
         jTextFieldLogFilePath.addFocusListener(new java.awt.event.FocusAdapter()
@@ -734,6 +769,7 @@ public class PreferencesDialog extends javax.swing.JDialog
             }
         });
 
+        jTextFieldLogFilePrefix.setToolTipText("Prefix of the log file name (e.g.: XSLog)");
         jTextFieldLogFilePrefix.setEnabled(false);
         jTextFieldLogFilePrefix.setNextFocusableComponent(jTextFieldLogFilePath);
         jTextFieldLogFilePrefix.addFocusListener(new java.awt.event.FocusAdapter()
@@ -799,13 +835,14 @@ public class PreferencesDialog extends javax.swing.JDialog
             }
         });
 
-        jLabelLogFileFilterPostPrint.setText("Number of lines to display after:");
+        jLabelLogFileFilterPostPrint.setText("Number of messages to display after:");
         jLabelLogFileFilterPostPrint.setFocusable(false);
 
-        jLabelLogFileFilterPrePrint.setText("Number of lines to display before:");
+        jLabelLogFileFilterPrePrint.setText("Number of messages to display before:");
         jLabelLogFileFilterPrePrint.setFocusable(false);
 
         jSpinnerLogFileFilterPrePrint.setModel(new javax.swing.SpinnerNumberModel(10, 0, 50, 1));
+        jSpinnerLogFileFilterPrePrint.setToolTipText("");
         jSpinnerLogFileFilterPrePrint.setEnabled(false);
         jSpinnerLogFileFilterPrePrint.setNextFocusableComponent(jSpinnerLogFileFilterPostPrint);
         jSpinnerLogFileFilterPrePrint.addChangeListener(new javax.swing.event.ChangeListener()
@@ -830,6 +867,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelLogFileFilterKeyword.setText("String to find:");
         jLabelLogFileFilterKeyword.setFocusable(false);
 
+        jTextFieldLogFileFilterKeyword.setToolTipText("Keyword that will be used to match text in the logs");
         jTextFieldLogFileFilterKeyword.setEnabled(false);
         jTextFieldLogFileFilterKeyword.setNextFocusableComponent(jSpinnerLogFileFilterPrePrint);
         jTextFieldLogFileFilterKeyword.addFocusListener(new java.awt.event.FocusAdapter()
@@ -840,9 +878,10 @@ public class PreferencesDialog extends javax.swing.JDialog
             }
         });
 
-        jLabelLogFileFilterName.setText("Name of the filter:");
+        jLabelLogFileFilterName.setText("Profile name:");
         jLabelLogFileFilterName.setFocusable(false);
 
+        jTextFieldLogFileFilterName.setToolTipText("Name of the profile");
         jTextFieldLogFileFilterName.setEnabled(false);
         jTextFieldLogFileFilterName.setNextFocusableComponent(jTextFieldLogFileFilterKeyword);
         jTextFieldLogFileFilterName.addFocusListener(new java.awt.event.FocusAdapter()
@@ -850,6 +889,22 @@ public class PreferencesDialog extends javax.swing.JDialog
             public void focusLost(java.awt.event.FocusEvent evt)
             {
                 jTextFieldLogFileFilterNameFocusLost(evt);
+            }
+        });
+
+        jLabelHighlightColor.setText("Foreground highlight color:");
+
+        jColorFieldHighlight.setEditable(false);
+        jColorFieldHighlight.setBackground(new java.awt.Color(255, 255, 255));
+        jColorFieldHighlight.setEnabled(false);
+        jColorFieldHighlight.setFocusable(false);
+
+        jButtonHighlightColor.setText("Choose color...");
+        jButtonHighlightColor.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonHighlightColorActionPerformed(evt);
             }
         });
 
@@ -862,6 +917,15 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanelFilterPropertiesLayout.createSequentialGroup()
                         .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabelLogFileFilterName)
+                            .addComponent(jLabelLogFileFilterKeyword))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextFieldLogFileFilterName)
+                            .addComponent(jTextFieldLogFileFilterKeyword)))
+                    .addGroup(jPanelFilterPropertiesLayout.createSequentialGroup()
+                        .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jCheckBoxLogFileFilterEnabled)
                             .addGroup(jPanelFilterPropertiesLayout.createSequentialGroup()
                                 .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addComponent(jLabelLogFileFilterPrePrint, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -870,28 +934,30 @@ public class PreferencesDialog extends javax.swing.JDialog
                                 .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(jSpinnerLogFileFilterPrePrint, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(jSpinnerLogFileFilterPostPrint, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addComponent(jCheckBoxLogFileFilterEnabled))
-                        .addGap(0, 74, Short.MAX_VALUE))
-                    .addGroup(jPanelFilterPropertiesLayout.createSequentialGroup()
-                        .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabelLogFileFilterName)
-                            .addComponent(jLabelLogFileFilterKeyword))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jTextFieldLogFileFilterName)
-                            .addComponent(jTextFieldLogFileFilterKeyword))))
+                            .addGroup(jPanelFilterPropertiesLayout.createSequentialGroup()
+                                .addComponent(jLabelHighlightColor)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jColorFieldHighlight, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jButtonHighlightColor, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(0, 7, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanelFilterPropertiesLayout.setVerticalGroup(
             jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelFilterPropertiesLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap()
                 .addComponent(jCheckBoxLogFileFilterEnabled)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabelHighlightColor)
+                    .addComponent(jColorFieldHighlight, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButtonHighlightColor))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelLogFileFilterName)
                     .addComponent(jTextFieldLogFileFilterName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanelFilterPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelLogFileFilterKeyword)
                     .addComponent(jTextFieldLogFileFilterKeyword, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -906,8 +972,9 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addContainerGap())
         );
 
-        jLabelLogFileAlias.setText("Name or alias:");
+        jLabelLogFileAlias.setText("Profile name:");
 
+        jTextFieldLogFileName.setToolTipText("Name of the profile");
         jTextFieldLogFileName.setEnabled(false);
         jTextFieldLogFileName.setNextFocusableComponent(jTextFieldLogFilePrefix);
         jTextFieldLogFileName.addFocusListener(new java.awt.event.FocusAdapter()
@@ -983,10 +1050,9 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addComponent(jSeparatorLogFileFilters, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelTemplateLogFilePropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPaneLogFileFilters)
+                    .addComponent(jScrollPaneLogFileFilters, javax.swing.GroupLayout.DEFAULT_SIZE, 253, Short.MAX_VALUE)
                     .addGroup(jPanelTemplateLogFilePropertiesLayout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jPanelFilterProperties, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jPanelFilterProperties, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(jPanelTemplateLogFilePropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jButtonLogFileFilterAdd)
@@ -1022,12 +1088,13 @@ public class PreferencesDialog extends javax.swing.JDialog
             .addGroup(jPanelTemplateLogFilesLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanelTemplateLogFilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabelTemplateLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLabelTemplateLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, 160, Short.MAX_VALUE)
                     .addComponent(jScrollPaneTemplateLogFiles, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addGroup(jPanelTemplateLogFilesLayout.createSequentialGroup()
                         .addComponent(jButtonTemplateLogFileAdd)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jButtonTemplateLogFileRemove)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButtonTemplateLogFileRemove)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addGap(18, 18, 18)
                 .addComponent(jPanelTemplateLogFileProperties, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -1059,6 +1126,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelServerUsername.setFocusable(false);
 
         jTextFieldServerUsername.setText("bwadmin");
+        jTextFieldServerUsername.setToolTipText("Enter the username to use when we connect to any of the servers");
         jTextFieldServerUsername.setNextFocusableComponent(jPasswordFieldServerPassword);
         jTextFieldServerUsername.addFocusListener(new java.awt.event.FocusAdapter()
         {
@@ -1072,6 +1140,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelServerPassword.setFocusable(false);
 
         jPasswordFieldServerPassword.setText("bwadmin");
+        jPasswordFieldServerPassword.setToolTipText("Enter the password to use when we connect to any of the servers");
         jPasswordFieldServerPassword.addFocusListener(new java.awt.event.FocusAdapter()
         {
             public void focusLost(java.awt.event.FocusEvent evt)
@@ -1086,6 +1155,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelMaxNumLines.setText("Maximum number of lines:");
 
         jSpinnerMaxNumLines.setModel(new javax.swing.SpinnerNumberModel(30000, 30, 100000, 10));
+        jSpinnerMaxNumLines.setToolTipText("The maxmimum number of lines to display in the terminal window");
         jSpinnerMaxNumLines.addChangeListener(new javax.swing.event.ChangeListener()
         {
             public void stateChanged(javax.swing.event.ChangeEvent evt)
@@ -1118,6 +1188,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jCheckBoxFlashTaskbar.setSelected(true);
         jCheckBoxFlashTaskbar.setText("Flash task bar on new text");
+        jCheckBoxFlashTaskbar.setToolTipText("If enabled, the task bar icon will flash if a new message is received while this window is out of focus");
         jCheckBoxFlashTaskbar.addChangeListener(new javax.swing.event.ChangeListener()
         {
             public void stateChanged(javax.swing.event.ChangeEvent evt)
@@ -1137,11 +1208,43 @@ public class PreferencesDialog extends javax.swing.JDialog
             }
         });
 
+        jLabelAutoRefresh.setText("Automatic file refresh interval (in seconds):");
+
+        jSpinnerAutoRefresh.setModel(new javax.swing.SpinnerNumberModel(4, 1, 600, 1));
+        jSpinnerAutoRefresh.setToolTipText("Modifies the interval at which the program will verify if a newer log file is available");
+        jSpinnerAutoRefresh.addChangeListener(new javax.swing.event.ChangeListener()
+        {
+            public void stateChanged(javax.swing.event.ChangeEvent evt)
+            {
+                jSpinnerAutoRefreshStateChanged(evt);
+            }
+        });
+
+        jColorFieldForeground.setEditable(false);
+        jColorFieldForeground.setBackground(new java.awt.Color(255, 255, 255));
+        jColorFieldForeground.setEnabled(false);
+        jColorFieldForeground.setFocusable(false);
+
+        jColorFieldBackground.setEditable(false);
+        jColorFieldBackground.setBackground(new java.awt.Color(255, 255, 255));
+        jColorFieldBackground.setEnabled(false);
+        jColorFieldBackground.setFocusable(false);
+
+        jCheckBoxLogToDisk.setText("Log terminal to disk");
+        jCheckBoxLogToDisk.setToolTipText("Enables the output of the terminal text to a log in the log folder relative to the executable");
+        jCheckBoxLogToDisk.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jCheckBoxLogToDiskActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanelMiscLayout = new javax.swing.GroupLayout(jPanelMisc);
         jPanelMisc.setLayout(jPanelMiscLayout);
         jPanelMiscLayout.setHorizontalGroup(
             jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jSeparatorCredentials)
+            .addComponent(jSeparatorCredentials, javax.swing.GroupLayout.DEFAULT_SIZE, 696, Short.MAX_VALUE)
             .addComponent(jSeparator1)
             .addGroup(jPanelMiscLayout.createSequentialGroup()
                 .addContainerGap()
@@ -1158,21 +1261,40 @@ public class PreferencesDialog extends javax.swing.JDialog
                             .addGap(20, 20, 20)
                             .addComponent(jPasswordFieldServerPassword, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addComponent(jLabelTerminalOptions)
-                    .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanelMiscLayout.createSequentialGroup()
                         .addComponent(jCheckBoxFlashTaskbar)
-                        .addGroup(jPanelMiscLayout.createSequentialGroup()
-                            .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(18, 18, 18)
+                        .addComponent(jCheckBoxLogToDisk))
+                    .addGroup(jPanelMiscLayout.createSequentialGroup()
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addGroup(jPanelMiscLayout.createSequentialGroup()
                                 .addComponent(jLabelMaxNumLines)
-                                .addComponent(jLabelTerminalForegroundColor)
-                                .addComponent(jLabelTerminalBackgroundColor))
-                            .addGap(19, 19, 19)
-                            .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                .addComponent(jButtonTerminalBackgroundColor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jButtonTerminalForegroundColor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jSpinnerMaxNumLines, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jButtonFont, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-                    .addComponent(jLabelFont))
-                .addContainerGap(444, Short.MAX_VALUE))
+                                .addGap(93, 93, 93))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMiscLayout.createSequentialGroup()
+                                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addGroup(jPanelMiscLayout.createSequentialGroup()
+                                        .addComponent(jLabelTerminalForegroundColor)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(jColorFieldForeground, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(jPanelMiscLayout.createSequentialGroup()
+                                        .addComponent(jLabelTerminalBackgroundColor)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(jColorFieldBackground, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGap(18, 18, 18)))
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jButtonTerminalBackgroundColor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jButtonTerminalForegroundColor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jSpinnerMaxNumLines, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelMiscLayout.createSequentialGroup()
+                            .addComponent(jLabelAutoRefresh)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jSpinnerAutoRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelMiscLayout.createSequentialGroup()
+                            .addComponent(jLabelFont)
+                            .addGap(191, 191, 191)
+                            .addComponent(jButtonFont, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         jPanelMiscLayout.setVerticalGroup(
             jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1198,20 +1320,28 @@ public class PreferencesDialog extends javax.swing.JDialog
                     .addComponent(jLabelMaxNumLines)
                     .addComponent(jSpinnerMaxNumLines, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jCheckBoxFlashTaskbar)
+                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jCheckBoxFlashTaskbar)
+                    .addComponent(jCheckBoxLogToDisk))
                 .addGap(18, 18, 18)
                 .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelTerminalForegroundColor)
-                    .addComponent(jButtonTerminalForegroundColor))
+                    .addComponent(jButtonTerminalForegroundColor)
+                    .addComponent(jColorFieldForeground, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelTerminalBackgroundColor)
-                    .addComponent(jButtonTerminalBackgroundColor))
+                    .addComponent(jButtonTerminalBackgroundColor)
+                    .addComponent(jColorFieldBackground, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelFont)
                     .addComponent(jButtonFont))
-                .addContainerGap(86, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabelAutoRefresh)
+                    .addComponent(jSpinnerAutoRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(48, Short.MAX_VALUE))
         );
 
         jTabbedPaneRoot.addTab("Miscellaneous", jPanelMisc);
@@ -1269,16 +1399,20 @@ public class PreferencesDialog extends javax.swing.JDialog
 	{
 	    "", ""
 	};
+	ArrayList<String> newServer;
 	do
 	{
 	    if (!success)
 	    {
-		server = new ServerDialog(this, true, true, server[0], server[1]).showDialog();
+		newServer = new ServerDialog(this, true, true, server[0], server[1], templateLogFilesListModel.elements(), serverLogFilesListModel.elements()).showDialog();
 	    }
 	    else
 	    {
-		server = new ServerDialog(this, true, false, null, null).showDialog();
+		newServer = new ServerDialog(this, true, false, null, null, templateLogFilesListModel.elements(), null).showDialog();
 	    }
+
+	    server[0] = newServer.get(0);
+	    server[1] = newServer.get(1);
 
 	    // Verify if the user cancelled
 	    if (server[0].equals("") || server[1].equals(""))
@@ -1289,8 +1423,17 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    // Verify the input
 	    if (!serverListModel.contains(server[0]))
 	    {
+		// Create the server
+		Server s = new Server(server[0], server[1]);
+
+		// Add its log files
+		for (int i = 2; i < newServer.size(); ++i)
+		{
+		    s.addLog(newServer.get(i));
+		}
+
 		// Add it to the respective places
-		Preferences.getInstance().addServer(new Server(server[0], server[1]));
+		Preferences.getInstance().addServer(s);
 		serverListModel.addElement(server[0]);
 
 		// Set added server as selected and load its properties
@@ -1306,8 +1449,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 		JOptionPane.showMessageDialog(this, "There is another server with the same name!");
 		success = false;
 	    }
-	}
-	while (!success);
+	} while (!success);
 
     }//GEN-LAST:event_jButtonAddServerActionPerformed
 
@@ -1346,6 +1488,9 @@ public class PreferencesDialog extends javax.swing.JDialog
 	// Save window location and size
 	Preferences.getInstance().setUIPreference(id, getBounds(), 0);
 
+	// Make sure every pref tab is saved
+	ensureConsistency();
+
 	// Save all the modifications
 	Preferences.getInstance().save();
 
@@ -1374,28 +1519,35 @@ public class PreferencesDialog extends javax.swing.JDialog
 
 	do
 	{
-	    String[] server = new ServerDialog(this, true, true, serverToEdit.getName(), serverToEdit.getHostname()).showDialog();
+	    ArrayList<String> server = new ServerDialog(this, true, true, serverToEdit.getName(), serverToEdit.getHostname(), templateLogFilesListModel.elements(), serverLogFilesListModel.elements()).showDialog();
 
 	    // Remove the server temporarily
 	    serverListModel.removeElement((String) jListServers.getSelectedValue());
 
 	    // If the user cancelled
-	    if (server[0].equals("") || server[1].equals(""))
+	    if (server.get(0).equals("") || server.get(1).equals(""))
 	    {
 		serverListModel.add(index, serverToEdit.getName());
 		break;
 	    }
 	    // Else we verify the input
-	    else if (!serverListModel.contains(server[0]))
+	    else if (!serverListModel.contains(server.get(0)))
 	    {
+		// Update the logs on the server
+		serverToEdit.removeAllLogs();
+		for(int i = 2; i < server.size(); ++i)
+		{
+		    serverToEdit.addLog(server.get(i));
+		}
+
 		// Apply the changes to the prefs
 		Preferences.getInstance().removeServer(serverToEdit.getName());
-		serverToEdit.setName(server[0]);
-		serverToEdit.setHostname(server[1]);
+		serverToEdit.setName(server.get(0));
+		serverToEdit.setHostname(server.get(1));
 		Preferences.getInstance().addServer(serverToEdit);
 
 		// Insert if correct
-		serverListModel.addElement(server[0]);
+		serverListModel.addElement(server.get(0));
 
 		// Sort the list
 		sortList(jListServers, ListComparator.Type.SERVER);
@@ -1407,8 +1559,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 		JOptionPane.showMessageDialog(this, "There is another server with the same name!");
 		success = false;
 	    }
-	}
-	while (!success);
+	} while (!success);
 
 	// Reselect the server in the list no matter what
 	jListServers.setSelectedValue(serverToEdit.getName(), true);
@@ -1537,34 +1688,47 @@ public class PreferencesDialog extends javax.swing.JDialog
 
 	Log editedLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
 
+	String newName = jTextFieldLogFileName.getText();
+
 	// Make sure there actually is a log selected
-	if (editedLog == null || index == -1 || jTextFieldLogFileName.getText().equals((String) jListLogFiles.getSelectedValue()))
+	if (editedLog == null || index == -1 || newName.equals((String) jListLogFiles.getSelectedValue()))
 	{
 	    return;
 	}
 
-	if (jTextFieldLogFileName.getText().equals(""))
+	if (newName.equals(""))
 	{
 	    JOptionPane.showMessageDialog(this, "Name cannot be empty!");
 	    jTextFieldLogFileName.setText((String) jListTemplateLogFiles.getSelectedValue());
 	    return;
 	}
-	else if (jTextFieldLogFileName.getText().equals((String) jListTemplateLogFiles.getSelectedValue()))
+	else if (newName.equals((String) jListTemplateLogFiles.getSelectedValue()))
 	{
 	    // No change has been done, so we just disregard this event
 	    return;
 	}
-	else if (templateLogFilesListModel.contains(jTextFieldLogFileName.getText()))
+	else if (templateLogFilesListModel.contains(newName))
 	{
 	    JOptionPane.showMessageDialog(this, "There is another entry with the same name!");
 	    jTextFieldLogFileName.setText((String) jListTemplateLogFiles.getSelectedValue());
 	    return;
 	}
 
-	Preferences.getInstance().removeLog((String) jListTemplateLogFiles.getSelectedValue());
+	Preferences.getInstance().removeLog(editedLog.getName());
+
+	// Verify if any of the servers has this log
+	for (int i = 0; i < serverListModel.size(); ++i)
+	{
+	    Server server = Preferences.getInstance().getServer((String) serverListModel.get(i));
+
+	    if (server.removeLog(editedLog.getName()))
+	    {
+		server.addLog(newName);
+	    }
+	}
 
 	// Modify the value
-	editedLog.setName(jTextFieldLogFileName.getText());
+	editedLog.setName(newName);
 
 	// Insert into list and prefs
 	Preferences.getInstance().addLog(editedLog);
@@ -1617,7 +1781,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void jButtonLogFileFilterAddActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonLogFileFilterAddActionPerformed
     {//GEN-HEADEREND:event_jButtonLogFileFilterAddActionPerformed
-        // Create a new Filter
+	// Create a new Filter
 
 	String name = "New Filter";
 
@@ -1691,7 +1855,6 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jListLogFiles.setSelectedValue(logName, true);
 	}
 
-
 	sortList(jListLogFiles, ListComparator.Type.LOG);
     }//GEN-LAST:event_jButtonAddLogFileActionPerformed
 
@@ -1761,7 +1924,18 @@ public class PreferencesDialog extends javax.swing.JDialog
     private void jTextFieldLogFileFilterNameFocusLost(java.awt.event.FocusEvent evt)//GEN-FIRST:event_jTextFieldLogFileFilterNameFocusLost
     {//GEN-HEADEREND:event_jTextFieldLogFileFilterNameFocusLost
 	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
+
+	if (currentLog == null)
+	{
+	    return;
+	}
+
 	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
+
+	if (currentFilter == null)
+	{
+	    return;
+	}
 
 	if (jTextFieldLogFileFilterName.getText().equals(""))
 	{
@@ -1795,8 +1969,19 @@ public class PreferencesDialog extends javax.swing.JDialog
     private void jTextFieldLogFileFilterKeywordFocusLost(java.awt.event.FocusEvent evt)//GEN-FIRST:event_jTextFieldLogFileFilterKeywordFocusLost
     {//GEN-HEADEREND:event_jTextFieldLogFileFilterKeywordFocusLost
 	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
+
+	if (currentLog == null)
+	{
+	    return;
+	}
+
 	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
 
+	if (currentFilter == null)
+	{
+	    return;
+	}
+	
 	currentFilter.setKeyword(jTextFieldLogFileFilterKeyword.getText());
     }//GEN-LAST:event_jTextFieldLogFileFilterKeywordFocusLost
 
@@ -1810,7 +1995,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
 	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
 
-	currentFilter.setLinesBefore((int) jSpinnerLogFileFilterPrePrint.getValue());
+	currentFilter.setMessagesBefore((int) jSpinnerLogFileFilterPrePrint.getValue());
     }//GEN-LAST:event_jSpinnerLogFileFilterPrePrintStateChanged
 
     private void jSpinnerLogFileFilterPostPrintStateChanged(javax.swing.event.ChangeEvent evt)//GEN-FIRST:event_jSpinnerLogFileFilterPostPrintStateChanged
@@ -1823,36 +2008,38 @@ public class PreferencesDialog extends javax.swing.JDialog
 	Log currentLog = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
 	Filter currentFilter = currentLog.getFilter((String) jListLogFileFilters.getSelectedValue());
 
-	currentFilter.setLinesAfter((int) jSpinnerLogFileFilterPostPrint.getValue());
+	currentFilter.setMessagesAfter((int) jSpinnerLogFileFilterPostPrint.getValue());
     }//GEN-LAST:event_jSpinnerLogFileFilterPostPrintStateChanged
 
     private void jSpinnerMaxNumLinesStateChanged(javax.swing.event.ChangeEvent evt)//GEN-FIRST:event_jSpinnerMaxNumLinesStateChanged
     {//GEN-HEADEREND:event_jSpinnerMaxNumLinesStateChanged
-        Preferences.getInstance().setMaxNumLines((int) jSpinnerMaxNumLines.getValue());
+	Preferences.getInstance().setMaxNumLines((int) jSpinnerMaxNumLines.getValue());
     }//GEN-LAST:event_jSpinnerMaxNumLinesStateChanged
 
     private void jCheckBoxFlashTaskbarStateChanged(javax.swing.event.ChangeEvent evt)//GEN-FIRST:event_jCheckBoxFlashTaskbarStateChanged
     {//GEN-HEADEREND:event_jCheckBoxFlashTaskbarStateChanged
-        Preferences.getInstance().setFlashTaskbar(jCheckBoxFlashTaskbar.isSelected());
+	Preferences.getInstance().setFlashTaskbar(jCheckBoxFlashTaskbar.isSelected());
     }//GEN-LAST:event_jCheckBoxFlashTaskbarStateChanged
 
     private void jButtonTerminalForegroundColorActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonTerminalForegroundColorActionPerformed
     {//GEN-HEADEREND:event_jButtonTerminalForegroundColorActionPerformed
-        ColorChooser cc = new ColorChooser(this, true, Preferences.getInstance().getForegroundColor());
-	
-	Preferences.getInstance().setForegroundColor(cc.showDialog());
+	ColorChooser cc = new ColorChooser(this, true, Preferences.getInstance().getForegroundColor());
+	Color color = cc.showDialog();
+	Preferences.getInstance().setForegroundColor(color);
+	jColorFieldForeground.setBackground(color);
     }//GEN-LAST:event_jButtonTerminalForegroundColorActionPerformed
 
     private void jButtonTerminalBackgroundColorActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonTerminalBackgroundColorActionPerformed
     {//GEN-HEADEREND:event_jButtonTerminalBackgroundColorActionPerformed
 	ColorChooser cc = new ColorChooser(this, true, Preferences.getInstance().getBackgroundColor());
-
-	Preferences.getInstance().setBackgroundColor(cc.showDialog());
+	Color color = cc.showDialog();
+	Preferences.getInstance().setBackgroundColor(color);
+	jColorFieldBackground.setBackground(color);
     }//GEN-LAST:event_jButtonTerminalBackgroundColorActionPerformed
 
     private void jButtonFontActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonFontActionPerformed
     {//GEN-HEADEREND:event_jButtonFontActionPerformed
-        JFontChooser fc = new JFontChooser();
+	JFontChooser fc = new JFontChooser();
 	fc.setSelectedFont(Preferences.getInstance().getTerminalFont());
 	int result = fc.showDialog(this);
 	if (result == JFontChooser.OK_OPTION)
@@ -1860,6 +2047,26 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    Preferences.getInstance().setTerminalFont(fc.getSelectedFont());
 	}
     }//GEN-LAST:event_jButtonFontActionPerformed
+
+    private void jSpinnerAutoRefreshStateChanged(javax.swing.event.ChangeEvent evt)//GEN-FIRST:event_jSpinnerAutoRefreshStateChanged
+    {//GEN-HEADEREND:event_jSpinnerAutoRefreshStateChanged
+	Preferences.getInstance().setRefreshInterval((int) jSpinnerAutoRefresh.getValue());
+    }//GEN-LAST:event_jSpinnerAutoRefreshStateChanged
+
+    private void jButtonHighlightColorActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonHighlightColorActionPerformed
+    {//GEN-HEADEREND:event_jButtonHighlightColorActionPerformed
+	Log log = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue());
+	Filter filter = log.getFilter((String) jListLogFileFilters.getSelectedValue());
+	ColorChooser cc = new ColorChooser(this, true, filter.getHighlightColor());
+	Color color = cc.showDialog();
+	filter.setHighlightColor(color);
+	jColorFieldHighlight.setBackground(color);
+    }//GEN-LAST:event_jButtonHighlightColorActionPerformed
+
+    private void jCheckBoxLogToDiskActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jCheckBoxLogToDiskActionPerformed
+    {//GEN-HEADEREND:event_jCheckBoxLogToDiskActionPerformed
+        Preferences.getInstance().setOutputToDisk(jCheckBoxLogToDisk.isSelected());
+    }//GEN-LAST:event_jCheckBoxLogToDiskActionPerformed
 
     class ServerCellRenderer extends DefaultListCellRenderer
     {
@@ -1886,8 +2093,10 @@ public class PreferencesDialog extends javax.swing.JDialog
 	public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus)
 	{
 	    Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+	    Filter f = Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue()).getFilter((String) value);
 	    
-	    if (Preferences.getInstance().getLog((String) jListTemplateLogFiles.getSelectedValue()).getFilter((String) value).isEnabled())
+	    if (f != null && f.isEnabled())
 	    {
 		c.setFont(c.getFont().deriveFont(Font.BOLD));
 	    }
@@ -1907,6 +2116,7 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonEditServer;
     private javax.swing.JButton jButtonFont;
+    private javax.swing.JButton jButtonHighlightColor;
     private javax.swing.JButton jButtonLogFileFilterAdd;
     private javax.swing.JButton jButtonLogFileFilterRemove;
     private javax.swing.JButton jButtonOK;
@@ -1918,9 +2128,15 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JButton jButtonTerminalForegroundColor;
     private javax.swing.JCheckBox jCheckBoxFlashTaskbar;
     private javax.swing.JCheckBox jCheckBoxLogFileFilterEnabled;
+    private javax.swing.JCheckBox jCheckBoxLogToDisk;
     private javax.swing.JCheckBox jCheckBoxServerPropertiesEnabled;
+    private javax.swing.JTextField jColorFieldBackground;
+    private javax.swing.JTextField jColorFieldForeground;
+    private javax.swing.JTextField jColorFieldHighlight;
+    private javax.swing.JLabel jLabelAutoRefresh;
     private javax.swing.JLabel jLabelCredentials;
     private javax.swing.JLabel jLabelFont;
+    private javax.swing.JLabel jLabelHighlightColor;
     private javax.swing.JLabel jLabelLogFileAlias;
     private javax.swing.JLabel jLabelLogFileDescription;
     private javax.swing.JLabel jLabelLogFileFilterKeyword;
@@ -1965,6 +2181,7 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JSeparator jSeparatorLogFileFilters;
     private javax.swing.JSeparator jSeparatorServerConnectionProtocol;
     private javax.swing.JSeparator jSeparatorServerMonitoring;
+    private javax.swing.JSpinner jSpinnerAutoRefresh;
     private javax.swing.JSpinner jSpinnerLogFileFilterPostPrint;
     private javax.swing.JSpinner jSpinnerLogFileFilterPrePrint;
     private javax.swing.JSpinner jSpinnerMaxNumLines;

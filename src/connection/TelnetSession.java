@@ -1,10 +1,9 @@
 package connection;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.net.telnet.TelnetClient;
 
 /**
@@ -39,26 +38,10 @@ public class TelnetSession extends Session
     @Override
     public void execCommand(String cmd)
     {
-	printStream.println(cmd);
+	printStream.print(cmd + "\r\n");
 	printStream.flush();
 
-	StringBuilder sb = new StringBuilder();
-	while (true)
-	{
-	    try
-	    {
-		sb.append((char) session.getInputStream().read());
-
-		if (sb.toString().endsWith("\n"))
-		{
-		    break;
-		}
-	    }
-	    catch (IOException ex)
-	    {
-		Logger.getLogger(TelnetSession.class.getName()).log(Level.SEVERE, null, ex);
-	    }
-	}
+//	readUntil("$ ", session.getInputStream());
     }
 
     public void setOutputStream(OutputStream outputStream)
@@ -70,4 +53,31 @@ public class TelnetSession extends Session
 //    {
 //	this.inputStream = inputStream;
 //    }
+    public String readUntil(String pattern, InputStream in)
+    {
+	try
+	{
+	    char lastChar = pattern.charAt(pattern.length() - 1);
+	    StringBuilder sb = new StringBuilder();
+
+	    char ch = (char) in.read();
+	    while (true)
+	    {
+		sb.append(ch);
+		if (ch == lastChar)
+		{
+		    if (sb.toString().endsWith(pattern))
+		    {
+			return sb.toString();
+		    }
+		}
+		ch = (char) in.read();
+	    }
+	}
+	catch (IOException ex)
+	{
+	}
+
+	return null;
+    }
 }
