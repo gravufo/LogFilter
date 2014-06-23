@@ -29,7 +29,7 @@ import persistence.Preferences;
 public class RemoteConsumer extends Thread
 {
     private static final int MAX_CHAR_BUFF = 50000;
-    private static final Pattern pattern = Pattern.compile("^.*[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$");
+    private static final Pattern pattern = Pattern.compile("^\\s*.*[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*\\s*$");
 //    private static final String messageHeader = "^.*[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$";
 
     protected BufferedReader in;
@@ -226,28 +226,13 @@ public class RemoteConsumer extends Thread
 	    // Append the saved buffer in case there was anything
 	    sb.append(savedBuffer);
 
+	    String line = savedBuffer;
+
 	    //Clear it afterwards
-	    savedBuffer = "";
+	    savedBuffer = null;
 
 	    while (canConsume)
 	    {
-		// Make sure we have data waiting (we don't
-		// want to block on the in.read)
-		while (!in.ready())
-		{
-		    // Wait another 10 ms
-		    sleep(10);
-
-		    // If a stop was called
-		    if (!canConsume)
-		    {
-			return "";
-		    }
-		}
-
-		String line = in.readLine() + "\n";
-		sb.append(line);
-
 		// Process each filter for this log file
 		for (Filter f : filterMap.values())
 		{
@@ -268,9 +253,7 @@ public class RemoteConsumer extends Thread
 			// the keyword we were looking for
 			String receivedLines[] = sb.toString().split("\\n");
 
-			// -2 because we don't want to search the line
-			// containing the keyword found (aka the latest line)
-			int firstLine = receivedLines.length - 1 - 1;
+			int firstLine = receivedLines.length - 1;
 			int message = 0;
 
 			while (firstLine >= 0 && message < f.getMessagesBefore() + 1 && receivedLines.length > 1)
@@ -431,6 +414,23 @@ public class RemoteConsumer extends Thread
 
 		    System.gc();
 		}
+
+		// Make sure we have data waiting (we don't
+		// want to block on the in.read)
+		while (!in.ready())
+		{
+		    // Wait another 10 ms
+		    sleep(10);
+
+		    // If a stop was called
+		    if (!canConsume)
+		    {
+			return "";
+		    }
+		}
+
+		line = in.readLine() + "\n";
+		sb.append(line);
 	    }
 	}
 	catch (IOException ex)
