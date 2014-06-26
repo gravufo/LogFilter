@@ -76,7 +76,7 @@
             </Property>
             <Property name="lineWrap" type="boolean" value="true"/>
             <Property name="rows" type="int" value="5"/>
-            <Property name="text" type="java.lang.String" value="Version 0.5a&#xa;&#xa;This tool serves the purpose of monitoring and filtering log files on remote servers.&#xa;&#xa;Created in 2014 by Christian Artin and supervised by Khang Dang.&#xa;&#xa;Special thanks to the System Test and Automation team in Saint-Laurent, QC for alpha and beta testing!&#xa;&#xa;Open-source usage:&#xa;&#x9;- Ganymed-SSH-2 : https://code.google.com/p/ganymed-ssh-2/&#xa;&#x9;- Apache Commons Net: http://commons.apache.org/proper/commons-net/&#xa;&#x9;- JFontChooser by Masahiko SAWAI"/>
+            <Property name="text" type="java.lang.String" value="Version 0.8a&#xa;&#xa;This tool serves the purpose of monitoring and filtering log files on remote servers.&#xa;&#xa;Created in 2014 by Christian Artin and supervised by Khang Dang.&#xa;&#xa;Special thanks to the System Test and Automation team in Saint-Laurent, QC for alpha and beta testing!&#xa;&#xa;Open-source usage:&#xa;&#x9;- JSch : http://www.jcraft.com/jsch/&#xa;&#x9;- Apache Commons Net: http://commons.apache.org/proper/commons-net/&#xa;&#x9;- JFontChooser by Masahiko SAWAI"/>
             <Property name="wrapStyleWord" type="boolean" value="true"/>
             <Property name="focusable" type="boolean" value="false"/>
           </Properties>

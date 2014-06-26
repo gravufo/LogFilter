@@ -28,7 +28,7 @@ import persistence.Preferences;
  */
 public class RemoteConsumer extends Thread
 {
-    private static final int MAX_CHAR_BUFF = 50000;
+    private static final int MAX_CHAR_BUFF = 5000;
     private static final Pattern pattern = Pattern.compile("^\\s*.*[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*\\s*$");
 //    private static final String messageHeader = "^.*[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}\\b [0-9]{2}:[0-9]{2}:[0-9]{2}.*$";
 
@@ -83,8 +83,19 @@ public class RemoteConsumer extends Thread
 		    text = message;
 		    StyledDocument doc = console.getStyledDocument();
 
-		    if (highlightText)
+		    if (highlightText && !text.isEmpty())
 		    {
+			// Print the header in color first
+			findFirstKeyword();
+			SimpleAttributeSet header = new SimpleAttributeSet();
+			StyleConstants.setForeground(header, highlightColor);
+			int index = text.indexOf(" ----------------------------------------------") + 47;
+			doc.insertString(doc.getLength(), text.substring(0, index), header);
+			text = text.substring(index);
+
+			min = -2;
+
+			// Go ahead for the rest of the message
 			while (min != -1)
 			{
 			    findFirstKeyword();
@@ -365,7 +376,7 @@ public class RemoteConsumer extends Thread
 				    else // This is the header of the next message
 				    {
 					// Save it for the next iteration!
-					savedBuffer = s;
+					savedBuffer = s + "\n";
 				    }
 				}
 			    }
@@ -393,26 +404,11 @@ public class RemoteConsumer extends Thread
 		// Make sure we haven't reached the buffer limit yet
 		if (sb.length() > MAX_CHAR_BUFF)
 		{
-//		    String[] lines = sb.toString().split("\\n");
-//		    sb = new StringBuilder();
-//
-//		    // remove 15 lines
-//		    for (int i = 15; i < lines.length; ++i)
-//		    {
-//			sb.append(lines[i]);
-//			sb.append("\n");
-//		    }
-
-//		    for (int i = 0; i < lines.length && i < 15; ++i)
-//		    {
-//			charCounter -= lines[i].length();
-//		    }
 		    int charsToDelete = sb.length() - MAX_CHAR_BUFF + MAX_CHAR_BUFF / 4;
 
 		    sb.delete(0, charsToDelete);
-//		    sb.delete(0, sb.indexOf("\\n") + 2);
 
-		    System.gc();
+//		    System.gc();
 		}
 
 		// Make sure we have data waiting (we don't

@@ -357,6 +357,8 @@ public class MainWindow extends JFrame
 
     private void clearSelection()
     {
+//	System.gc();
+
 	if (jTextPaneOutput.getSelectedText() == null)
 	{
 	    jTextPaneOutput.setText("");

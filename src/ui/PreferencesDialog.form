@@ -826,7 +826,7 @@
                     <Component class="javax.swing.JSpinner" name="jSpinnerLogFileFilterPrePrint">
                       <Properties>
                         <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
-                          <SpinnerModel initial="10" maximum="50" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
+                          <SpinnerModel initial="2" maximum="15" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
                         </Property>
                         <Property name="toolTipText" type="java.lang.String" value=""/>
                         <Property name="enabled" type="boolean" value="false"/>
@@ -841,7 +841,7 @@
                     <Component class="javax.swing.JSpinner" name="jSpinnerLogFileFilterPostPrint">
                       <Properties>
                         <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
-                          <SpinnerModel initial="10" maximum="50" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
+                          <SpinnerModel initial="2" maximum="15" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
                         </Property>
                         <Property name="enabled" type="boolean" value="false"/>
                         <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">

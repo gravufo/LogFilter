@@ -841,7 +841,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelLogFileFilterPrePrint.setText("Number of messages to display before:");
         jLabelLogFileFilterPrePrint.setFocusable(false);
 
-        jSpinnerLogFileFilterPrePrint.setModel(new javax.swing.SpinnerNumberModel(10, 0, 50, 1));
+        jSpinnerLogFileFilterPrePrint.setModel(new javax.swing.SpinnerNumberModel(2, 0, 15, 1));
         jSpinnerLogFileFilterPrePrint.setToolTipText("");
         jSpinnerLogFileFilterPrePrint.setEnabled(false);
         jSpinnerLogFileFilterPrePrint.setNextFocusableComponent(jSpinnerLogFileFilterPostPrint);
@@ -853,7 +853,7 @@ public class PreferencesDialog extends javax.swing.JDialog
             }
         });
 
-        jSpinnerLogFileFilterPostPrint.setModel(new javax.swing.SpinnerNumberModel(10, 0, 50, 1));
+        jSpinnerLogFileFilterPostPrint.setModel(new javax.swing.SpinnerNumberModel(2, 0, 15, 1));
         jSpinnerLogFileFilterPostPrint.setEnabled(false);
         jSpinnerLogFileFilterPostPrint.setNextFocusableComponent(jButtonOK);
         jSpinnerLogFileFilterPostPrint.addChangeListener(new javax.swing.event.ChangeListener()
