@@ -30,7 +30,7 @@ public class ServerConnectionTelnet extends ServerConnection
 	try
 	{
 //	    TerminalTypeOptionHandler ttopt = new TerminalTypeOptionHandler("VT100", false, false, true, false);
-//	    EchoOptionHandler echoopt = new EchoOptionHandler(true, false, true, false);
+//	    EchoOptionHandler echoopt = new EchoOptionHandler(false, false, true, false);
 //	    SuppressGAOptionHandler gaopt = new SuppressGAOptionHandler(true, true, true, true);
 //
 //	    ((TelnetSession) session).getSession().addOptionHandler(ttopt);
@@ -49,26 +49,25 @@ public class ServerConnectionTelnet extends ServerConnection
 	    PrintStream out = new PrintStream(((TelnetSession) session).getSession().getOutputStream());
 
 	    ((TelnetSession) session).setOutputStream(out);
-//	    ((TelnetSession) session).setInputStream(in);
+	    ((TelnetSession) session).setInputStream(in);
 
             // Log the user on
-            ((TelnetSession) session).readUntil("login: ", in);
+            ((TelnetSession) session).readUntil("login: ");
 	    out.println(account.getUserName());
 	    out.flush();
 
-	    ((TelnetSession) session).readUntil("Password: ", in);
+	    ((TelnetSession) session).readUntil("Password: ");
 	    out.println(account.getPassword());
 	    out.flush();
 
             // Advance to a prompt
-            if (((TelnetSession) session).readUntil("$", in) == null)
+            if (((TelnetSession) session).readUntil("$ ") == null)
 	    {
 		MainWindow.writeToConsole("The username or password is incorrect\n");
 	    }
 
 	    session.execCommand("stty -echo");
-
-	    ((TelnetSession) session).readUntil("$ ", ((TelnetSession) session).getSession().getInputStream());
+	    ((TelnetSession) session).readUntil("$ ");
 	}
 	catch (IOException ex)
 	{

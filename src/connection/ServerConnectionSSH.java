@@ -2,7 +2,6 @@ package connection;
 
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.UserInfo;
 import java.net.PasswordAuthentication;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,6 +15,7 @@ import ui.MainWindow;
 public class ServerConnectionSSH extends ServerConnection
 {
     private com.jcraft.jsch.Session connection;
+    private boolean isShell;
 
     /**
      * Constructor
@@ -26,6 +26,7 @@ public class ServerConnectionSSH extends ServerConnection
     public ServerConnectionSSH(String hostname, PasswordAuthentication account)
     {
 	super(hostname, account);
+	this.isShell = true;
     }
 
     @Override
@@ -46,9 +47,12 @@ public class ServerConnectionSSH extends ServerConnection
 		 * Here, we are just using Username/Password authentication with
 		 * absolutely no certificate verification or other type of auth.
 		 */
-		MyUserInfo ui = new MyUserInfo();
-		ui.setPassword(account.getPassword());
-		connection.setUserInfo(ui);
+		connection.setPassword(new String(account.getPassword()));
+
+		java.util.Properties config = new java.util.Properties();
+		config.put("StrictHostKeyChecking", "no");
+		connection.setConfig(config);
+
 		connection.connect();
 
 		/*
@@ -92,6 +96,14 @@ public class ServerConnectionSSH extends ServerConnection
 	    try
 	    {
 		session = new SSHSession(connection);
+
+		if (isShell)
+		{
+		    session.readUntil("$ ");
+		    session.execCommand("stty -echo");
+		    session.readUntil("$ ");
+		}
+
 		sessionActive = true;
 	    }
 	    catch (JSchException ex)
@@ -132,51 +144,6 @@ public class ServerConnectionSSH extends ServerConnection
 	{
 	    connected = false;
 	    connection.disconnect();
-	}
-    }
-
-    public static class MyUserInfo implements UserInfo
-    {
-	@Override
-	public String getPassword()
-	{
-	    return new String(passwd);
-	}
-
-	public void setPassword(char[] password)
-	{
-	    passwd = password;
-	}
-
-	@Override
-	public boolean promptYesNo(String str)
-	{
-	    return true;
-	}
-
-	char[] passwd;
-
-	@Override
-	public String getPassphrase()
-	{
-	    return new String(passwd);
-	}
-
-	@Override
-	public boolean promptPassword(String string)
-	{
-	    return true;
-	}
-
-	@Override
-	public boolean promptPassphrase(String string)
-	{
-	    return true;
-	}
-
-	@Override
-	public void showMessage(String string)
-	{
 	}
     }
 }

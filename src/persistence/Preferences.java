@@ -43,6 +43,7 @@ public class Preferences implements Serializable
 	serverMap = new HashMap<>();
 	logMap = new HashMap<>();
 	uIPreferences = new HashMap<>();
+	alarmFiltersList = new ArrayList<>();
 	
 	serverUsername = "bwadmin";
 	serverPassword = new char[]
@@ -164,6 +165,29 @@ public class Preferences implements Serializable
 	defaultLog.setNamePrefix("FileReposLog");
 	logMap.put("PS-FileReposLog", defaultLog);
 
+	defaultLog = new Log("PS-Provisioning-PSLog");
+	defaultLog.setFilePath("/var/broadworks/logs/provisioning/");
+	defaultLog.setNamePrefix("PSLog");
+	logMap.put("PS-Provisioning-PSLog", defaultLog);
+
+	defaultLog = new Log("PS-Provisioning-PSOutput");
+	defaultLog.setFilePath("/var/broadworks/logs/provisioning/");
+	defaultLog.setNamePrefix("PSOutput");
+	logMap.put("PS-Provisioning-PSOutput", defaultLog);
+
+	/**
+	 * XS LOGS
+	 */
+	defaultLog = new Log("XS-XSLog");
+	defaultLog.setFilePath("/var/broadworks/appserver/");
+	defaultLog.setNamePrefix("XSLog");
+	logMap.put("XS-XSLog", defaultLog);
+
+	defaultLog = new Log("XS-XSOutput");
+	defaultLog.setFilePath("/var/broadworks/appserver/");
+	defaultLog.setNamePrefix("XSOutput");
+	logMap.put("XS-XSOutput", defaultLog);
+
 	/**
 	 * XSP LOGS
 	 */
@@ -222,6 +246,8 @@ public class Preferences implements Serializable
 	    Log newLog = new Log(log);
 	    logMap.put(newLog.getName(), newLog);
 	}
+
+	alarmFiltersList = new ArrayList<>(preferences.alarmFiltersList);
 	
 	serverUsername = preferences.serverUsername;
 	serverPassword = preferences.serverPassword;
@@ -509,6 +535,21 @@ public class Preferences implements Serializable
 	this.logPath = logPath;
     }
 
+    public ArrayList<String> getAlarmFiltersList()
+    {
+	return alarmFiltersList;
+    }
+
+    public void addAlarmFilter(String alarmFilter)
+    {
+	this.alarmFiltersList.add(alarmFilter);
+    }
+
+    public void removeAlarmFilter(String alarmFilter)
+    {
+	this.alarmFiltersList.remove(alarmFilter);
+    }
+
     /**
      * Active instance of this class
      */
@@ -590,4 +631,9 @@ public class Preferences implements Serializable
      * The path of the log files that will be created (relative path)
      */
     private String logPath;
+
+    /**
+     * The list containing all the alarm filters
+     */
+    private ArrayList<String> alarmFiltersList;
 }

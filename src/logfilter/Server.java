@@ -17,6 +17,7 @@ public class Server implements Serializable
 	this.name = name;
 	this.hostname = hostname;
 	this.logList = new ArrayList<>();
+	this.monitorAlarms = false;
     }
 
     public Server(String name, String hostname, Server server)
@@ -26,6 +27,7 @@ public class Server implements Serializable
 	this.name = name;
 	this.hostname = hostname;
 	this.logList = new ArrayList<>(server.logList);
+	this.monitorAlarms = server.monitorAlarms;
     }
 
     public Server(Server server)
@@ -35,6 +37,7 @@ public class Server implements Serializable
 	this.name = server.name;
 	this.hostname = server.hostname;
 	this.logList = new ArrayList<>(server.logList);
+	this.monitorAlarms = server.monitorAlarms;
     }
     
     public String getHostname()

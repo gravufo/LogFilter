@@ -2,7 +2,6 @@ package ui;
 
 import collections.Pair;
 import connection.ConnectionManager;
-import connection.RemoteConsumerManager;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -255,9 +254,6 @@ public class MainWindow extends JFrame
 	ImageIcon img = new ImageIcon(getClass().getResource("/images/Log_icon.png"));
 	setIconImage(img.getImage());
 
-	// Set the console to output on
-	RemoteConsumerManager.getInstance().setConsole(jTextPaneOutput);
-
 	// Initialise the connection manager
 	connectionManager = ConnectionManager.getInstance();
 
@@ -357,7 +353,7 @@ public class MainWindow extends JFrame
 
     private void clearSelection()
     {
-//	System.gc();
+	System.gc();
 
 	if (jTextPaneOutput.getSelectedText() == null)
 	{
@@ -532,6 +528,7 @@ public class MainWindow extends JFrame
         jMenuFile = new javax.swing.JMenu();
         jMenuItemExit = new javax.swing.JMenuItem();
         jMenuEdit = new javax.swing.JMenu();
+        jMenuItemFind = new javax.swing.JMenuItem();
         jMenuItemPreferences = new javax.swing.JMenuItem();
         jMenuHelp = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
@@ -668,6 +665,17 @@ public class MainWindow extends JFrame
         jMenuEdit.setMnemonic(KeyEvent.VK_E);
         jMenuEdit.setText("Edit");
 
+        jMenuItemFind.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItemFind.setText("Find...");
+        jMenuItemFind.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMenuItemFindActionPerformed(evt);
+            }
+        });
+        jMenuEdit.add(jMenuItemFind);
+
         jMenuItemPreferences.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_P, java.awt.event.InputEvent.ALT_MASK));
         jMenuItemPreferences.setText("Preferences...");
         jMenuItemPreferences.addActionListener(new java.awt.event.ActionListener()
@@ -783,6 +791,11 @@ public class MainWindow extends JFrame
 //	caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
     }//GEN-LAST:event_jTextPaneOutputKeyPressed
 
+    private void jMenuItemFindActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemFindActionPerformed
+    {//GEN-HEADEREND:event_jMenuItemFindActionPerformed
+	Find.getInstance().display();
+    }//GEN-LAST:event_jMenuItemFindActionPerformed
+
     /**
      * This class represents a filter for the number of lines to display in the
      * console output.
@@ -883,6 +896,11 @@ public class MainWindow extends JFrame
 	}
     }
 
+    public static JTextPane getConsolePane()
+    {
+	return jTextPaneOutput;
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonConnect;
     private javax.swing.JButton jButtonDisconnect;
@@ -894,6 +912,7 @@ public class MainWindow extends JFrame
     private javax.swing.JMenu jMenuHelp;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItemExit;
+    private javax.swing.JMenuItem jMenuItemFind;
     private javax.swing.JMenuItem jMenuItemPreferences;
     private javax.swing.JPanel jPanelRoot;
     private javax.swing.JScrollPane jScrollPaneOutput;

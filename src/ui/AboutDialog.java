@@ -47,7 +47,7 @@ public class AboutDialog extends javax.swing.JDialog
         jTextAreaInfo.setForeground(new java.awt.Color(102, 255, 0));
         jTextAreaInfo.setLineWrap(true);
         jTextAreaInfo.setRows(5);
-        jTextAreaInfo.setText("Version 0.8a\n\nThis tool serves the purpose of monitoring and filtering log files on remote servers.\n\nCreated in 2014 by Christian Artin and supervised by Khang Dang.\n\nSpecial thanks to the System Test and Automation team in Saint-Laurent, QC for alpha and beta testing!\n\nOpen-source usage:\n\t- JSch : http://www.jcraft.com/jsch/\n\t- Apache Commons Net: http://commons.apache.org/proper/commons-net/\n\t- JFontChooser by Masahiko SAWAI");
+        jTextAreaInfo.setText("Version 1.0\n\nThis tool serves the purpose of monitoring and filtering log files on remote servers.\n\nCreated in 2014 by Christian Artin and supervised by Khang Dang.\n\nSpecial thanks to the System Test and Automation team in Saint-Laurent, QC for alpha and beta testing!\n\nOpen-source usage:\n\t- JSch : http://www.jcraft.com/jsch/\n\t- Apache Commons Net: http://commons.apache.org/proper/commons-net/\n\t- JFontChooser by Masahiko SAWAI");
         jTextAreaInfo.setWrapStyleWord(true);
         jTextAreaInfo.setFocusable(false);
         jScrollPane1.setViewportView(jTextAreaInfo);

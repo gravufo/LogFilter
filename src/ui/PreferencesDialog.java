@@ -14,6 +14,7 @@ import java.net.PasswordAuthentication;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.swing.DefaultListCellRenderer;
@@ -54,12 +55,15 @@ public class PreferencesDialog extends javax.swing.JDialog
 	serverLogFilesListModel = new DefaultListModel();
 	logFileFilterModel = new DefaultListModel();
 
+	alarmFilterListModel = new DefaultListModel();
+
 	initComponents();
 
 	jListServers.setModel(serverListModel);
 	jListLogFiles.setModel(serverLogFilesListModel);
 	jListTemplateLogFiles.setModel(templateLogFilesListModel);
 	jListLogFileFilters.setModel(logFileFilterModel);
+	jListAlarmFilters.setModel(alarmFilterListModel);
 
 	Pair<Rectangle, Integer> temp = Preferences.getInstance().getUIPreference(id);
 	if (temp != null)
@@ -99,6 +103,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	jListLogFiles.setSelectedIndex(0);
 	jListServers.setSelectedIndex(0);
 	jListTemplateLogFiles.setSelectedIndex(0);
+	jListAlarmFilters.setSelectedIndex(0);
 
 	// Set the escape character to close the dialog
 	ActionListener escListener = new ActionListener()
@@ -141,11 +146,13 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jButtonEditServer.setEnabled(false);
 	    jButtonRemoveServer.setEnabled(false);
 	    jCheckBoxServerPropertiesEnabled.setEnabled(false);
+	    jCheckBoxAlarmMonitoring.setEnabled(false);
 	    jRadioButtonServerConnectionSSH.setEnabled(false);
 	    jRadioButtonServerConnectionTelnet.setEnabled(false);
 	    jListLogFiles.setEnabled(false);
 
 	    jCheckBoxServerPropertiesEnabled.setSelected(false);
+	    jCheckBoxAlarmMonitoring.setSelected(false);
 	    jRadioButtonServerConnectionSSH.setSelected(false);
 	    jRadioButtonServerConnectionTelnet.setSelected(false);
 
@@ -156,6 +163,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    Server server = Preferences.getInstance().getServer((String) jListServers.getSelectedValue());
 
 	    jCheckBoxServerPropertiesEnabled.setSelected(server.isEnabled());
+	    jCheckBoxAlarmMonitoring.setSelected(server.isMonitorAlarms());
 	    jRadioButtonServerConnectionSSH.setSelected(server.isUseSSH());
 	    jRadioButtonServerConnectionTelnet.setSelected(!server.isUseSSH());
 
@@ -175,10 +183,12 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    if (server.getLogList().isEmpty())
 	    {
 		jCheckBoxServerPropertiesEnabled.setEnabled(false);
+		jCheckBoxAlarmMonitoring.setEnabled(false);
 	    }
 	    else
 	    {
 		jCheckBoxServerPropertiesEnabled.setEnabled(true);
+		jCheckBoxAlarmMonitoring.setEnabled(true);
 	    }
 
 	    jRadioButtonServerConnectionSSH.setEnabled(true);
@@ -307,6 +317,13 @@ public class PreferencesDialog extends javax.swing.JDialog
 	jColorFieldForeground.setBackground(Preferences.getInstance().getForegroundColor());
 	jCheckBoxLogToDisk.setSelected(Preferences.getInstance().isOutputToDisk());
 	jCheckBoxFlashTaskbar.setSelected(Preferences.getInstance().isFlashTaskbar());
+
+	// Load the Alarm filters
+	Iterator<String> it = Preferences.getInstance().getAlarmFiltersList().iterator();
+	while (it.hasNext())
+	{
+	    alarmFilterListModel.addElement(it.next());
+	}
     }
 
     private void ensureConsistency()
@@ -407,6 +424,9 @@ public class PreferencesDialog extends javax.swing.JDialog
         jSeparatorServerConnectionProtocol = new javax.swing.JSeparator();
         jLabelServerMonitoring = new javax.swing.JLabel();
         jSeparatorServerMonitoring = new javax.swing.JSeparator();
+        jLabelAlarmMonitoring = new javax.swing.JLabel();
+        jSeparator2 = new javax.swing.JSeparator();
+        jCheckBoxAlarmMonitoring = new javax.swing.JCheckBox();
         jPanelTemplateLogFiles = new javax.swing.JPanel();
         jScrollPaneTemplateLogFiles = new javax.swing.JScrollPane();
         jListTemplateLogFiles = new javax.swing.JList();
@@ -464,6 +484,16 @@ public class PreferencesDialog extends javax.swing.JDialog
         jColorFieldForeground = new javax.swing.JTextField();
         jColorFieldBackground = new javax.swing.JTextField();
         jCheckBoxLogToDisk = new javax.swing.JCheckBox();
+        jSeparator3 = new javax.swing.JSeparator();
+        jSeparator4 = new javax.swing.JSeparator();
+        jLabelAlarmFilters = new javax.swing.JLabel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jListAlarmFilters = new javax.swing.JList();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jTextAreaAlarmFilters = new javax.swing.JTextArea();
+        jTextFieldAlarmFilters = new javax.swing.JTextField();
+        jButtonAlarmFilterRemove = new javax.swing.JButton();
+        jButtonAlarmFilterAdd = new javax.swing.JButton();
         jButtonCancel = new javax.swing.JButton();
         jButtonOK = new javax.swing.JButton();
 
@@ -633,25 +663,44 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelServerMonitoring.setText("Server Monitoring");
         jLabelServerMonitoring.setFocusable(false);
 
+        jLabelAlarmMonitoring.setText("Alarm Monitoring");
+
+        jCheckBoxAlarmMonitoring.setText("Enabled");
+        jCheckBoxAlarmMonitoring.setToolTipText("When checked, the currently selected server will be monitored for alarms.");
+        jCheckBoxAlarmMonitoring.setContentAreaFilled(false);
+        jCheckBoxAlarmMonitoring.setEnabled(false);
+        jCheckBoxAlarmMonitoring.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jCheckBoxAlarmMonitoringActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanelServerPropertiesLayout = new javax.swing.GroupLayout(jPanelServerProperties);
         jPanelServerProperties.setLayout(jPanelServerPropertiesLayout);
         jPanelServerPropertiesLayout.setHorizontalGroup(
             jPanelServerPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jSeparatorServerConnectionProtocol)
+            .addComponent(jSeparatorServerMonitoring)
+            .addComponent(jSeparator2)
             .addGroup(jPanelServerPropertiesLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanelServerPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabelServerConnectionProtocol)
                     .addComponent(jCheckBoxServerPropertiesEnabled)
-                    .addComponent(jLabelServerMonitoring))
+                    .addComponent(jLabelServerMonitoring)
+                    .addComponent(jLabelAlarmMonitoring))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(jPanelServerPropertiesLayout.createSequentialGroup()
                 .addGap(10, 10, 10)
-                .addComponent(jRadioButtonServerConnectionTelnet)
-                .addGap(18, 18, 18)
-                .addComponent(jRadioButtonServerConnectionSSH)
-                .addGap(0, 81, Short.MAX_VALUE))
-            .addComponent(jSeparatorServerMonitoring)
+                .addGroup(jPanelServerPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jCheckBoxAlarmMonitoring)
+                    .addGroup(jPanelServerPropertiesLayout.createSequentialGroup()
+                        .addComponent(jRadioButtonServerConnectionTelnet)
+                        .addGap(18, 18, 18)
+                        .addComponent(jRadioButtonServerConnectionSSH)))
+                .addGap(0, 83, Short.MAX_VALUE))
         );
         jPanelServerPropertiesLayout.setVerticalGroup(
             jPanelServerPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -660,17 +709,23 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addComponent(jLabelServerMonitoring)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparatorServerMonitoring, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jCheckBoxServerPropertiesEnabled)
-                .addGap(40, 40, 40)
+                .addGap(13, 13, 13)
+                .addComponent(jLabelAlarmMonitoring)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jSeparator2, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jCheckBoxAlarmMonitoring)
+                .addGap(13, 13, 13)
                 .addComponent(jLabelServerConnectionProtocol)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparatorServerConnectionProtocol, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanelServerPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jRadioButtonServerConnectionTelnet)
-                    .addComponent(jRadioButtonServerConnectionSSH))
-                .addContainerGap(177, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanelServerPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jRadioButtonServerConnectionSSH)
+                    .addComponent(jRadioButtonServerConnectionTelnet))
+                .addContainerGap(121, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanelServersAndLogsLayout = new javax.swing.GroupLayout(jPanelServersAndLogs);
@@ -698,7 +753,7 @@ public class PreferencesDialog extends javax.swing.JDialog
                         .addGap(18, 18, 18)
                         .addComponent(jLabelLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelServersAndLogsLayout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 33, Short.MAX_VALUE)
                         .addGroup(jPanelServersAndLogsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanelServersAndLogsLayout.createSequentialGroup()
                                 .addComponent(jButtonAddLogFile)
@@ -1088,7 +1143,7 @@ public class PreferencesDialog extends javax.swing.JDialog
             .addGroup(jPanelTemplateLogFilesLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanelTemplateLogFilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabelTemplateLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, 160, Short.MAX_VALUE)
+                    .addComponent(jLabelTemplateLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, 164, Short.MAX_VALUE)
                     .addComponent(jScrollPaneTemplateLogFiles, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addGroup(jPanelTemplateLogFilesLayout.createSequentialGroup()
                         .addComponent(jButtonTemplateLogFileAdd)
@@ -1240,108 +1295,203 @@ public class PreferencesDialog extends javax.swing.JDialog
             }
         });
 
+        jSeparator3.setOrientation(javax.swing.SwingConstants.VERTICAL);
+
+        jLabelAlarmFilters.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        jLabelAlarmFilters.setText("Alarms");
+
+        jListAlarmFilters.addListSelectionListener(new javax.swing.event.ListSelectionListener()
+        {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt)
+            {
+                jListAlarmFiltersValueChanged(evt);
+            }
+        });
+        jScrollPane1.setViewportView(jListAlarmFilters);
+
+        jScrollPane2.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        jScrollPane2.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+
+        jTextAreaAlarmFilters.setEditable(false);
+        jTextAreaAlarmFilters.setBackground(new java.awt.Color(240, 240, 240));
+        jTextAreaAlarmFilters.setColumns(20);
+        jTextAreaAlarmFilters.setLineWrap(true);
+        jTextAreaAlarmFilters.setRows(5);
+        jTextAreaAlarmFilters.setText("This list contains the \"trapName\" of the alarms you do not want to receive.");
+        jTextAreaAlarmFilters.setWrapStyleWord(true);
+        jTextAreaAlarmFilters.setFocusable(false);
+        jTextAreaAlarmFilters.setOpaque(false);
+        jTextAreaAlarmFilters.setRequestFocusEnabled(false);
+        jTextAreaAlarmFilters.setVerifyInputWhenFocusTarget(false);
+        jScrollPane2.setViewportView(jTextAreaAlarmFilters);
+
+        jTextFieldAlarmFilters.addKeyListener(new java.awt.event.KeyAdapter()
+        {
+            public void keyTyped(java.awt.event.KeyEvent evt)
+            {
+                jTextFieldAlarmFiltersKeyTyped(evt);
+            }
+        });
+
+        jButtonAlarmFilterRemove.setText("-");
+        jButtonAlarmFilterRemove.setEnabled(false);
+        jButtonAlarmFilterRemove.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonAlarmFilterRemoveActionPerformed(evt);
+            }
+        });
+
+        jButtonAlarmFilterAdd.setText("+");
+        jButtonAlarmFilterAdd.setEnabled(false);
+        jButtonAlarmFilterAdd.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jButtonAlarmFilterAddActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanelMiscLayout = new javax.swing.GroupLayout(jPanelMisc);
         jPanelMisc.setLayout(jPanelMiscLayout);
         jPanelMiscLayout.setHorizontalGroup(
             jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jSeparatorCredentials, javax.swing.GroupLayout.DEFAULT_SIZE, 696, Short.MAX_VALUE)
-            .addComponent(jSeparator1)
             .addGroup(jPanelMiscLayout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(jPanelMiscLayout.createSequentialGroup()
+                        .addContainerGap()
                         .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabelCredentials)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMiscLayout.createSequentialGroup()
-                                .addComponent(jLabelServerUsername)
-                                .addGap(18, 18, 18)
-                                .addComponent(jTextFieldServerUsername)))
-                        .addGroup(jPanelMiscLayout.createSequentialGroup()
-                            .addComponent(jLabelServerPassword)
-                            .addGap(20, 20, 20)
-                            .addComponent(jPasswordFieldServerPassword, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(jLabelTerminalOptions)
-                    .addGroup(jPanelMiscLayout.createSequentialGroup()
-                        .addComponent(jCheckBoxFlashTaskbar)
-                        .addGap(18, 18, 18)
-                        .addComponent(jCheckBoxLogToDisk))
-                    .addGroup(jPanelMiscLayout.createSequentialGroup()
-                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabelCredentials)
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMiscLayout.createSequentialGroup()
+                                        .addComponent(jLabelServerUsername)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(jTextFieldServerUsername)))
+                                .addGroup(jPanelMiscLayout.createSequentialGroup()
+                                    .addComponent(jLabelServerPassword)
+                                    .addGap(20, 20, 20)
+                                    .addComponent(jPasswordFieldServerPassword, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(jLabelTerminalOptions)
                             .addGroup(jPanelMiscLayout.createSequentialGroup()
-                                .addComponent(jLabelMaxNumLines)
-                                .addGap(93, 93, 93))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMiscLayout.createSequentialGroup()
-                                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                .addComponent(jCheckBoxFlashTaskbar)
+                                .addGap(18, 18, 18)
+                                .addComponent(jCheckBoxLogToDisk))
+                            .addGroup(jPanelMiscLayout.createSequentialGroup()
+                                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addGroup(jPanelMiscLayout.createSequentialGroup()
-                                        .addComponent(jLabelTerminalForegroundColor)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(jColorFieldForeground, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(jPanelMiscLayout.createSequentialGroup()
-                                        .addComponent(jLabelTerminalBackgroundColor)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(jColorFieldBackground, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addGap(18, 18, 18)))
-                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jButtonTerminalBackgroundColor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jButtonTerminalForegroundColor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jSpinnerMaxNumLines, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                        .addComponent(jLabelMaxNumLines)
+                                        .addGap(93, 93, 93))
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMiscLayout.createSequentialGroup()
+                                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                            .addGroup(jPanelMiscLayout.createSequentialGroup()
+                                                .addComponent(jLabelTerminalForegroundColor)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                .addComponent(jColorFieldForeground, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                            .addGroup(jPanelMiscLayout.createSequentialGroup()
+                                                .addComponent(jLabelTerminalBackgroundColor)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                .addComponent(jColorFieldBackground, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                        .addGap(18, 18, 18)))
+                                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(jButtonTerminalBackgroundColor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jButtonTerminalForegroundColor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jSpinnerMaxNumLines, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelMiscLayout.createSequentialGroup()
+                                    .addComponent(jLabelAutoRefresh)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jSpinnerAutoRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelMiscLayout.createSequentialGroup()
+                                    .addComponent(jLabelFont)
+                                    .addGap(191, 191, 191)
+                                    .addComponent(jButtonFont, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)))))
                     .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelMiscLayout.createSequentialGroup()
-                            .addComponent(jLabelAutoRefresh)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jSpinnerAutoRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelMiscLayout.createSequentialGroup()
-                            .addComponent(jLabelFont)
-                            .addGap(191, 191, 191)
-                            .addComponent(jButtonFont, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addGap(0, 0, Short.MAX_VALUE))
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 438, Short.MAX_VALUE)
+                        .addComponent(jSeparatorCredentials, javax.swing.GroupLayout.Alignment.LEADING)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jSeparator3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMiscLayout.createSequentialGroup()
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMiscLayout.createSequentialGroup()
+                                .addComponent(jTextFieldAlarmFilters)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jButtonAlarmFilterAdd)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jButtonAlarmFilterRemove))
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 233, Short.MAX_VALUE))
+                        .addContainerGap())
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jLabelAlarmFilters)
+                        .addComponent(jSeparator4, javax.swing.GroupLayout.PREFERRED_SIZE, 248, javax.swing.GroupLayout.PREFERRED_SIZE))))
         );
         jPanelMiscLayout.setVerticalGroup(
             jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jSeparator3)
             .addGroup(jPanelMiscLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabelCredentials)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jSeparatorCredentials, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabelServerUsername)
-                    .addComponent(jTextFieldServerUsername, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelMiscLayout.createSequentialGroup()
+                        .addComponent(jLabelCredentials)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jSeparatorCredentials, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelServerUsername)
+                            .addComponent(jTextFieldServerUsername, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelServerPassword)
+                            .addComponent(jPasswordFieldServerPassword, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(18, 18, 18)
+                        .addComponent(jLabelTerminalOptions)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelMaxNumLines)
+                            .addComponent(jSpinnerMaxNumLines, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jCheckBoxFlashTaskbar)
+                            .addComponent(jCheckBoxLogToDisk))
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelTerminalForegroundColor)
+                            .addComponent(jButtonTerminalForegroundColor)
+                            .addComponent(jColorFieldForeground, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelTerminalBackgroundColor)
+                            .addComponent(jButtonTerminalBackgroundColor)
+                            .addComponent(jColorFieldBackground, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelFont)
+                            .addComponent(jButtonFont))
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabelAutoRefresh)
+                            .addComponent(jSpinnerAutoRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(jPanelMiscLayout.createSequentialGroup()
+                        .addComponent(jLabelAlarmFilters)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jSeparator4, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 68, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 250, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabelServerPassword)
-                    .addComponent(jPasswordFieldServerPassword, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addComponent(jLabelTerminalOptions)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabelMaxNumLines)
-                    .addComponent(jSpinnerMaxNumLines, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jCheckBoxFlashTaskbar)
-                    .addComponent(jCheckBoxLogToDisk))
-                .addGap(18, 18, 18)
-                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabelTerminalForegroundColor)
-                    .addComponent(jButtonTerminalForegroundColor)
-                    .addComponent(jColorFieldForeground, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabelTerminalBackgroundColor)
-                    .addComponent(jButtonTerminalBackgroundColor)
-                    .addComponent(jColorFieldBackground, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabelFont)
-                    .addComponent(jButtonFont))
-                .addGap(18, 18, 18)
-                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabelAutoRefresh)
-                    .addComponent(jSpinnerAutoRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(48, Short.MAX_VALUE))
+                .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jTextFieldAlarmFilters, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jButtonAlarmFilterRemove)
+                        .addComponent(jButtonAlarmFilterAdd)))
+                .addContainerGap(14, Short.MAX_VALUE))
         );
 
         jTabbedPaneRoot.addTab("Miscellaneous", jPanelMisc);
@@ -1591,14 +1741,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void jCheckBoxServerPropertiesEnabledActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jCheckBoxServerPropertiesEnabledActionPerformed
     {//GEN-HEADEREND:event_jCheckBoxServerPropertiesEnabledActionPerformed
-	if (jCheckBoxServerPropertiesEnabled.isSelected())
-	{
-	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setEnabled(true);
-	}
-	else
-	{
-	    Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setEnabled(false);
-	}
+	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setEnabled(jCheckBoxServerPropertiesEnabled.isSelected());
 
 	sortList(jListServers, ListComparator.Type.SERVER);
 	jListServers.repaint();
@@ -2068,6 +2211,47 @@ public class PreferencesDialog extends javax.swing.JDialog
         Preferences.getInstance().setOutputToDisk(jCheckBoxLogToDisk.isSelected());
     }//GEN-LAST:event_jCheckBoxLogToDiskActionPerformed
 
+    private void jCheckBoxAlarmMonitoringActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jCheckBoxAlarmMonitoringActionPerformed
+    {//GEN-HEADEREND:event_jCheckBoxAlarmMonitoringActionPerformed
+	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setMonitorAlarms(jCheckBoxAlarmMonitoring.isSelected());
+    }//GEN-LAST:event_jCheckBoxAlarmMonitoringActionPerformed
+
+    private void jTextFieldAlarmFiltersKeyTyped(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextFieldAlarmFiltersKeyTyped
+    {//GEN-HEADEREND:event_jTextFieldAlarmFiltersKeyTyped
+        jButtonAlarmFilterAdd.setEnabled(jTextFieldAlarmFilters.getText().length() > 0);
+    }//GEN-LAST:event_jTextFieldAlarmFiltersKeyTyped
+
+    private void jButtonAlarmFilterAddActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonAlarmFilterAddActionPerformed
+    {//GEN-HEADEREND:event_jButtonAlarmFilterAddActionPerformed
+	String name = ((String) jTextFieldAlarmFilters.getText()).toLowerCase();
+	if (alarmFilterListModel.contains(name))
+	{
+	    JOptionPane.showMessageDialog(this, "An alarm with the same name already exists.");
+	    return;
+	}
+	Preferences.getInstance().addAlarmFilter(name);
+	alarmFilterListModel.addElement(name);
+	jTextFieldAlarmFilters.setText("");
+	jButtonAlarmFilterAdd.setEnabled(false);
+    }//GEN-LAST:event_jButtonAlarmFilterAddActionPerformed
+
+    private void jButtonAlarmFilterRemoveActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonAlarmFilterRemoveActionPerformed
+    {//GEN-HEADEREND:event_jButtonAlarmFilterRemoveActionPerformed
+	int index = jListAlarmFilters.getSelectedIndex();
+	Preferences.getInstance().removeAlarmFilter((String) jListAlarmFilters.getSelectedValue());
+	alarmFilterListModel.remove(index);
+	if (index > 0)
+	{
+	    --index;
+	}
+	jListAlarmFilters.setSelectedIndex(index);
+    }//GEN-LAST:event_jButtonAlarmFilterRemoveActionPerformed
+
+    private void jListAlarmFiltersValueChanged(javax.swing.event.ListSelectionEvent evt)//GEN-FIRST:event_jListAlarmFiltersValueChanged
+    {//GEN-HEADEREND:event_jListAlarmFiltersValueChanged
+	jButtonAlarmFilterRemove.setEnabled(jListAlarmFilters.getSelectedIndex() >= 0);
+    }//GEN-LAST:event_jListAlarmFiltersValueChanged
+
     class ServerCellRenderer extends DefaultListCellRenderer
     {
 	@Override
@@ -2113,6 +2297,8 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.ButtonGroup buttonGroupServerProperties;
     private javax.swing.JButton jButtonAddLogFile;
     private javax.swing.JButton jButtonAddServer;
+    private javax.swing.JButton jButtonAlarmFilterAdd;
+    private javax.swing.JButton jButtonAlarmFilterRemove;
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonEditServer;
     private javax.swing.JButton jButtonFont;
@@ -2126,6 +2312,7 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JButton jButtonTemplateLogFileRemove;
     private javax.swing.JButton jButtonTerminalBackgroundColor;
     private javax.swing.JButton jButtonTerminalForegroundColor;
+    private javax.swing.JCheckBox jCheckBoxAlarmMonitoring;
     private javax.swing.JCheckBox jCheckBoxFlashTaskbar;
     private javax.swing.JCheckBox jCheckBoxLogFileFilterEnabled;
     private javax.swing.JCheckBox jCheckBoxLogToDisk;
@@ -2133,6 +2320,8 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JTextField jColorFieldBackground;
     private javax.swing.JTextField jColorFieldForeground;
     private javax.swing.JTextField jColorFieldHighlight;
+    private javax.swing.JLabel jLabelAlarmFilters;
+    private javax.swing.JLabel jLabelAlarmMonitoring;
     private javax.swing.JLabel jLabelAutoRefresh;
     private javax.swing.JLabel jLabelCredentials;
     private javax.swing.JLabel jLabelFont;
@@ -2158,6 +2347,7 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JLabel jLabelTerminalBackgroundColor;
     private javax.swing.JLabel jLabelTerminalForegroundColor;
     private javax.swing.JLabel jLabelTerminalOptions;
+    private javax.swing.JList jListAlarmFilters;
     private javax.swing.JList jListLogFileFilters;
     private javax.swing.JList jListLogFiles;
     private javax.swing.JList jListServers;
@@ -2171,11 +2361,16 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JPasswordField jPasswordFieldServerPassword;
     private javax.swing.JRadioButton jRadioButtonServerConnectionSSH;
     private javax.swing.JRadioButton jRadioButtonServerConnectionTelnet;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPaneLogFileFilters;
     private javax.swing.JScrollPane jScrollPaneLogFiles;
     private javax.swing.JScrollPane jScrollPaneServers;
     private javax.swing.JScrollPane jScrollPaneTemplateLogFiles;
     private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JSeparator jSeparator2;
+    private javax.swing.JSeparator jSeparator3;
+    private javax.swing.JSeparator jSeparator4;
     private javax.swing.JSeparator jSeparatorCredentials;
     private javax.swing.JSeparator jSeparatorLogFileDescription;
     private javax.swing.JSeparator jSeparatorLogFileFilters;
@@ -2186,6 +2381,8 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JSpinner jSpinnerLogFileFilterPrePrint;
     private javax.swing.JSpinner jSpinnerMaxNumLines;
     private javax.swing.JTabbedPane jTabbedPaneRoot;
+    private javax.swing.JTextArea jTextAreaAlarmFilters;
+    private javax.swing.JTextField jTextFieldAlarmFilters;
     private javax.swing.JTextField jTextFieldLogFileFilterKeyword;
     private javax.swing.JTextField jTextFieldLogFileFilterName;
     private javax.swing.JTextField jTextFieldLogFileName;
@@ -2200,4 +2397,5 @@ public class PreferencesDialog extends javax.swing.JDialog
     private DefaultListModel serverListModel;
     private DefaultListModel serverLogFilesListModel;
     private DefaultListModel logFileFilterModel;
+    private DefaultListModel alarmFilterListModel;
 }

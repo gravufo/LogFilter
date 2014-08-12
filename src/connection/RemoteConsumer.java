@@ -20,6 +20,7 @@ import javax.swing.text.StyledDocument;
 import logfilter.Filter;
 import logfilter.Log;
 import persistence.Preferences;
+import ui.MainWindow;
 
 /**
  * This class lets you actively listen and consume data coming from a session
@@ -46,11 +47,11 @@ public class RemoteConsumer extends Thread
     private Timer stateTimer;
     private UpdaterDaemon updaterDaemonThread;
 
-    protected RemoteConsumer(JTextPane console, String serverName, String logName)
+    protected RemoteConsumer(String serverName, String logName)
     {
 	super("Consumer-" + serverName + "-" + logName);
 
-	this.console = console;
+	this.console = MainWindow.getConsolePane();
 	this.logName = logName;
 	this.serverName = serverName;
 	filterMap = Preferences.getInstance().getLog(logName).getEnabledFilters();
@@ -177,7 +178,7 @@ public class RemoteConsumer extends Thread
 
     protected void initialise()
     {
-	writeToConsole(serverName + " : " + logName + "\n", false);
+	writeToConsole(serverName + " : " + logName + " [Started]\n", false);
 
 	int refreshInterval = 1000 * Preferences.getInstance().getRefreshInterval();
 	updaterDaemonThread = new UpdaterDaemon();
@@ -193,7 +194,7 @@ public class RemoteConsumer extends Thread
 	stateTimer.cancel();
 	updaterDaemonThread.cancel();
 
-	writeToConsole(serverName + " : " + logName + "\n", false);
+	writeToConsole(serverName + " : " + logName + " [Stopped]\n", false);
     }
 
     @Override
@@ -209,7 +210,6 @@ public class RemoteConsumer extends Thread
 	while (canConsume)
 	{
 	    writeToConsole(readUntilPattern(), true);
-//	    readUntilPattern();
 	}
 
 	cleanup();
@@ -258,7 +258,7 @@ public class RemoteConsumer extends Thread
 			StringBuilder finalMessage = new StringBuilder();
 
 			// Append the message banner
-			finalMessage.append(addServerBanner());
+			finalMessage.append(getServerBanner());
 
 			// Split our buffer by line. Last line will contain
 			// the keyword we were looking for
@@ -408,7 +408,7 @@ public class RemoteConsumer extends Thread
 
 		    sb.delete(0, charsToDelete);
 
-//		    System.gc();
+		    System.gc();
 		}
 
 		// Make sure we have data waiting (we don't
@@ -447,7 +447,7 @@ public class RemoteConsumer extends Thread
      *
      * @return The banner in the form of a string
      */
-    private String addServerBanner()
+    private String getServerBanner()
     {
 	StringBuilder sb = new StringBuilder();
 	sb.append("\n\n\n\n---------------------------------------------- ");
@@ -480,11 +480,12 @@ public class RemoteConsumer extends Thread
 	ensureConnection();
 
 	Log log = Preferences.getInstance().getLog(logName);
-
-	monitoringSession.execCommand("ls -rt " + log.getFilePath() + " | grep " + log.getNamePrefix() + "* | tail -1");
+	String cmd = "ls -rt " + log.getFilePath() + " | grep " + log.getNamePrefix() + "* | tail -1";
+	monitoringSession.execCommand(cmd);
 
 	String s = "";
 	BufferedReader br = new BufferedReader(new InputStreamReader(monitoringIn));
+
 	// Receive the answer
 	while (true)
 	{
@@ -498,6 +499,10 @@ public class RemoteConsumer extends Thread
 		    if (s.contains("$ "))
 		    {
 			s = s.substring(s.indexOf("$ ") + 2);
+		    }
+		    else if (s.contains(cmd))
+		    {
+			s = br.readLine();
 		    }
 		    break;
 		}

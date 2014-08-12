@@ -3,7 +3,6 @@ package connection;
 import collections.Pair;
 import java.util.HashMap;
 import java.util.Map;
-import javax.swing.JTextPane;
 import persistence.Preferences;
 import ui.MainWindow;
 
@@ -18,7 +17,6 @@ public class RemoteConsumerManager
 {
     private Map<String, Map<String, Pair<Session, RemoteConsumer>>> remoteConsumerMap;
     private static RemoteConsumerManager instance = null;
-    private JTextPane console;
 
     /**
      * Private constructor, will only be called once: Singleton
@@ -58,10 +56,10 @@ public class RemoteConsumerManager
 
 	if (Preferences.getInstance().getServer(serverName).isUseSSH())
 	{
-	    temp = new RemoteConsumerSSH(console, session, serverName, logName);
+	    temp = new RemoteConsumerSSH(session, serverName, logName);
 	}
 	else
-	    temp = new RemoteConsumerTelnet(console, session, serverName, logName);
+	    temp = new RemoteConsumerTelnet(session, serverName, logName);
 
 	Pair<Session, RemoteConsumer> pair = new Pair<>(session, temp);
 
@@ -125,15 +123,5 @@ public class RemoteConsumerManager
 	{
 	    remoteConsumerMap.remove(serverName);
 	}
-    }
-
-    /**
-     * Set the graphical component to output on
-     *
-     * @param console JTextArea that will contain the output
-     */
-    public void setConsole(JTextPane console)
-    {
-	this.console = console;
     }
 }

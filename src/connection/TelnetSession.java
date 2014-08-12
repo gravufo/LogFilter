@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.net.telnet.TelnetClient;
 
 /**
@@ -16,7 +18,7 @@ public class TelnetSession extends Session
 {
     private TelnetClient session;
     private PrintStream printStream;
-//    private InputStream inputStream;
+    private InputStream in;
 
     public TelnetSession()
     {
@@ -40,8 +42,13 @@ public class TelnetSession extends Session
     {
 	printStream.print(cmd + "\r\n");
 	printStream.flush();
+    }
 
-//	readUntil("$ ", session.getInputStream());
+    @Override
+    public void execCommand(int cmd)
+    {
+	printStream.print(cmd);
+	printStream.flush();
     }
 
     public void setOutputStream(OutputStream outputStream)
@@ -49,14 +56,23 @@ public class TelnetSession extends Session
 	this.printStream = new PrintStream(outputStream);
     }
 
-//    public void setInputStream(InputStream inputStream)
-//    {
-//	this.inputStream = inputStream;
-//    }
-    public String readUntil(String pattern, InputStream in)
+    public void setInputStream(InputStream inputStream)
+    {
+	in = inputStream;
+    }
+
+    @Override
+    public InputStream getInputStream()
+    {
+	return in;
+    }
+
+    @Override
+    public String readUntil(String pattern)
     {
 	try
 	{
+	    int counter = 0;
 	    char lastChar = pattern.charAt(pattern.length() - 1);
 	    StringBuilder sb = new StringBuilder();
 
@@ -71,11 +87,25 @@ public class TelnetSession extends Session
 			return sb.toString();
 		    }
 		}
+
+		while (in.available() == 0)
+		{
+		    Thread.sleep(100);
+
+		    counter++;
+
+		    if (counter == 10)
+		    {
+			return sb.toString();
+		    }
+		}
+
 		ch = (char) in.read();
 	    }
 	}
-	catch (IOException ex)
+	catch (InterruptedException | IOException ex)
 	{
+	    Logger.getLogger(TelnetSession.class.getName()).log(Level.SEVERE, null, ex);
 	}
 
 	return null;

@@ -73,6 +73,8 @@ public class ConnectionManager
 	    if (connection.isEmpty())
 	    {
 		connectionsMap.remove(serverName);
+
+		AlarmConsumerManager.getInstance().removeServer(serverName);
 	    }
 
 	    return true;
@@ -239,6 +241,11 @@ public class ConnectionManager
 	    // Add the session to the consumer manager
 	    remoteConsumerManager.addRemoteConsumer(serverName, logName, sc.getSession());
 
+	    if (Preferences.getInstance().getServer(serverName).isMonitorAlarms())
+	    {
+		AlarmConsumerManager.getInstance().addServer(serverName);
+	    }
+
 	    return true;
 	}
 
@@ -299,6 +306,9 @@ public class ConnectionManager
     {
 	if (removeConnection(serverName, logName))
 	{
+//	    ServerConnection sc = connectionsMap.get(serverName).get(logName);
+//	    Session session = sc.getSession();
+//	    session.execCommand(3);
 	    addConnection(Preferences.getInstance().getServer(serverName), logName, Preferences.getInstance().getServerAccount());
 	    startConnection(serverName, logName);
 	    executeCommand(serverName, logName);

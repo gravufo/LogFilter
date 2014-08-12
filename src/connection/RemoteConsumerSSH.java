@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JTextPane;
 import persistence.Preferences;
 
 /**
@@ -20,14 +19,13 @@ public class RemoteConsumerSSH extends RemoteConsumer
     /**
      * Constructor
      *
-     * @param console The console to display in
      * @param session The session to consume
      * @param serverName The name of the server we are monitoring
      * @param logName    The name of the log we are monitoring
      */
-    public RemoteConsumerSSH(JTextPane console, Session session, String serverName, String logName)
+    public RemoteConsumerSSH(Session session, String serverName, String logName)
     {
-	super(console, serverName, logName);
+	super(serverName, logName);
 
 	try
 	{
