@@ -102,6 +102,7 @@ public class ConnectionManager
 	{
 	    removeConnection(serverName, logName);
 	}
+
 	return success;
     }
 
@@ -154,11 +155,18 @@ public class ConnectionManager
 	    connectionsMap.put(server.getName(), new HashMap<String, ServerConnection>());
 	}
 
-	for (String logName : server.getLogList())
+	if (server.getLogList().isEmpty())
 	{
-	    if (!addConnection(server, logName, account))
+	    addConnection(server, "", account);
+	}
+	else
+	{
+	    for (String logName : server.getLogList())
 	    {
-		success = false;
+		if (!addConnection(server, logName, account))
+		{
+		    success = false;
+		}
 	    }
 	}
 
@@ -238,8 +246,12 @@ public class ConnectionManager
 	// Make sure the connection works
 	if (sc.connect())
 	{
-	    // Add the session to the consumer manager
-	    remoteConsumerManager.addRemoteConsumer(serverName, logName, sc.getSession());
+	    // Add the session to the consumer managers
+
+	    if (Preferences.getInstance().getServer(serverName).isMonitorLogs())
+	    {
+		remoteConsumerManager.addRemoteConsumer(serverName, logName, sc.getSession());
+	    }
 
 	    if (Preferences.getInstance().getServer(serverName).isMonitorAlarms())
 	    {
@@ -351,6 +363,11 @@ public class ConnectionManager
      */
     public void executeCommand(String serverName, String logName)
     {
+	if (logName.isEmpty())
+	{
+	    return;
+	}
+
 	Log log = Preferences.getInstance().getLog(logName);
 	remoteConsumerManager.executeCommand(serverName, logName, "tail -f `ls -tr " + log.getFilePath() + log.getNamePrefix() + "* | tail -1`");
     }

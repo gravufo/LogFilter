@@ -12,7 +12,7 @@ public class Server implements Serializable
 {
     public Server(String name, String hostname)
     {
-	this.enabled = false;
+	this.monitorLogs = false;
 	this.useSSH = true;
 	this.name = name;
 	this.hostname = hostname;
@@ -22,7 +22,7 @@ public class Server implements Serializable
 
     public Server(String name, String hostname, Server server)
     {
-	this.enabled = server.enabled;
+	this.monitorLogs = server.monitorLogs;
 	this.useSSH = server.useSSH;
 	this.name = name;
 	this.hostname = hostname;
@@ -32,7 +32,7 @@ public class Server implements Serializable
 
     public Server(Server server)
     {
-	this.enabled = server.enabled;
+	this.monitorLogs = server.monitorLogs;
 	this.useSSH = server.useSSH;
 	this.name = server.name;
 	this.hostname = server.hostname;
@@ -60,9 +60,9 @@ public class Server implements Serializable
 	this.name = name;
     }
 
-    public void setEnabled(boolean enabled)
+    public void setMonitorLogs(boolean monitorLogs)
     {
-	this.enabled = enabled;
+	this.monitorLogs = monitorLogs;
     }
 
     public void setUseSSH(boolean useSSH)
@@ -70,9 +70,14 @@ public class Server implements Serializable
 	this.useSSH = useSSH;
     }
 
+    public boolean isMonitorLogs()
+    {
+	return monitorLogs;
+    }
+
     public boolean isEnabled()
     {
-	return enabled;
+	return (monitorLogs && logList.size() > 0) || monitorAlarms;
     }
 
     public boolean isUseSSH()
@@ -120,7 +125,7 @@ public class Server implements Serializable
      * Contains the information whether the server should be monitored (true) or
      * not (false).
      */
-    private boolean enabled;
+    private boolean monitorLogs;
 
     /**
      * Determines if we should use SSH (true) or Telnet (false) for the

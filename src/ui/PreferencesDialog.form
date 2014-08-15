@@ -49,8 +49,8 @@
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
-              <Component id="jTabbedPaneRoot" min="-2" pref="450" max="-2" attributes="0"/>
-              <EmptySpace max="32767" attributes="0"/>
+              <Component id="jTabbedPaneRoot" min="-2" max="-2" attributes="0"/>
+              <EmptySpace pref="9" max="32767" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="jButtonCancel" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="jButtonOK" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -150,7 +150,7 @@
                           <Component id="jButtonAddLogFile" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="jButtonRemoveLogFile" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace pref="18" max="32767" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -173,6 +173,7 @@
                     <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
                       <ComponentRef name="jButtonAddServer"/>
                     </Property>
+                    <Property name="requestFocusEnabled" type="boolean" value="false"/>
                   </Properties>
                   <Events>
                     <EventHandler event="valueChanged" listener="javax.swing.event.ListSelectionListener" parameters="javax.swing.event.ListSelectionEvent" handler="jListServersValueChanged"/>
@@ -217,6 +218,7 @@
                     <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
                       <ComponentRef name="jButtonAddLogFile"/>
                     </Property>
+                    <Property name="requestFocusEnabled" type="boolean" value="false"/>
                   </Properties>
                   <Events>
                     <EventHandler event="valueChanged" listener="javax.swing.event.ListSelectionListener" parameters="javax.swing.event.ListSelectionEvent" handler="jListLogFilesValueChanged"/>
@@ -252,7 +254,7 @@
                 <Property name="text" type="java.lang.String" value="Remove"/>
                 <Property name="enabled" type="boolean" value="false"/>
                 <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
-                  <ComponentRef name="jCheckBoxServerPropertiesEnabled"/>
+                  <ComponentRef name="jCheckBoxLogMonitoringEnabled"/>
                 </Property>
               </Properties>
               <Events>
@@ -312,8 +314,8 @@
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="jLabelServerConnectionProtocol" alignment="0" min="-2" max="-2" attributes="0"/>
-                              <Component id="jCheckBoxServerPropertiesEnabled" alignment="0" min="-2" max="-2" attributes="0"/>
-                              <Component id="jLabelServerMonitoring" alignment="0" min="-2" max="-2" attributes="0"/>
+                              <Component id="jCheckBoxLogMonitoringEnabled" alignment="0" min="-2" max="-2" attributes="0"/>
+                              <Component id="jLabelLogMonitoring" alignment="0" min="-2" max="-2" attributes="0"/>
                               <Component id="jLabelAlarmMonitoring" alignment="0" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace max="32767" attributes="0"/>
@@ -336,11 +338,11 @@
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" alignment="0" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="jLabelServerMonitoring" min="-2" max="-2" attributes="0"/>
+                          <Component id="jLabelLogMonitoring" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="jSeparatorServerMonitoring" min="-2" pref="10" max="-2" attributes="0"/>
                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                          <Component id="jCheckBoxServerPropertiesEnabled" min="-2" max="-2" attributes="0"/>
+                          <Component id="jCheckBoxLogMonitoringEnabled" min="-2" max="-2" attributes="0"/>
                           <EmptySpace min="-2" pref="13" max="-2" attributes="0"/>
                           <Component id="jLabelAlarmMonitoring" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
@@ -378,18 +380,19 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jRadioButtonServerConnectionTelnetActionPerformed"/>
                   </Events>
                 </Component>
-                <Component class="javax.swing.JCheckBox" name="jCheckBoxServerPropertiesEnabled">
+                <Component class="javax.swing.JCheckBox" name="jCheckBoxLogMonitoringEnabled">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Enabled"/>
                     <Property name="toolTipText" type="java.lang.String" value="When checked, the selected server will be monitored using the log files shown on the right."/>
+                    <Property name="contentAreaFilled" type="boolean" value="false"/>
                     <Property name="enabled" type="boolean" value="false"/>
                     <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
-                      <ComponentRef name="jRadioButtonServerConnectionTelnet"/>
+                      <ComponentRef name="jCheckBoxAlarmMonitoring"/>
                     </Property>
                     <Property name="opaque" type="boolean" value="false"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBoxServerPropertiesEnabledActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBoxLogMonitoringEnabledActionPerformed"/>
                   </Events>
                 </Component>
                 <Component class="javax.swing.JRadioButton" name="jRadioButtonServerConnectionSSH">
@@ -416,9 +419,9 @@
                 </Component>
                 <Component class="javax.swing.JSeparator" name="jSeparatorServerConnectionProtocol">
                 </Component>
-                <Component class="javax.swing.JLabel" name="jLabelServerMonitoring">
+                <Component class="javax.swing.JLabel" name="jLabelLogMonitoring">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Server Monitoring"/>
+                    <Property name="text" type="java.lang.String" value="Log Monitoring"/>
                     <Property name="focusable" type="boolean" value="false"/>
                   </Properties>
                 </Component>
@@ -437,6 +440,10 @@
                     <Property name="toolTipText" type="java.lang.String" value="When checked, the currently selected server will be monitored for alarms."/>
                     <Property name="contentAreaFilled" type="boolean" value="false"/>
                     <Property name="enabled" type="boolean" value="false"/>
+                    <Property name="name" type="java.lang.String" value="" noResource="true"/>
+                    <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+                      <ComponentRef name="jRadioButtonServerConnectionTelnet"/>
+                    </Property>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBoxAlarmMonitoringActionPerformed"/>
@@ -484,7 +491,7 @@
                       <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Component id="jLabelTemplateLogFiles" min="-2" max="-2" attributes="0"/>
                       <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
-                      <Component id="jScrollPaneTemplateLogFiles" pref="345" max="32767" attributes="0"/>
+                      <Component id="jScrollPaneTemplateLogFiles" pref="342" max="32767" attributes="0"/>
                       <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="jButtonTemplateLogFileAdd" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -618,7 +625,7 @@
                           <Component id="jSeparatorLogFileFilters" min="-2" pref="10" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="jScrollPaneLogFileFilters" alignment="0" pref="253" max="32767" attributes="0"/>
+                              <Component id="jScrollPaneLogFileFilters" alignment="0" pref="250" max="32767" attributes="0"/>
                               <Group type="102" alignment="0" attributes="0">
                                   <Component id="jPanelFilterProperties" max="32767" attributes="0"/>
                                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
@@ -1167,9 +1174,9 @@
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="jSeparator4" min="-2" pref="10" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jScrollPane2" min="-2" pref="68" max="-2" attributes="0"/>
+                              <Component id="jScrollPane2" min="-2" pref="40" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jScrollPane1" min="-2" pref="250" max="-2" attributes="0"/>
+                              <Component id="jScrollPane1" min="-2" pref="278" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
@@ -1180,7 +1187,7 @@
                               <Component id="jButtonAlarmFilterAdd" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
                       </Group>
-                      <EmptySpace pref="14" max="32767" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -1402,6 +1409,9 @@
                       <Color blue="f0" green="f0" red="f0" type="rgb"/>
                     </Property>
                     <Property name="columns" type="int" value="20"/>
+                    <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+                      <Font name="Tahoma" size="12" style="0"/>
+                    </Property>
                     <Property name="lineWrap" type="boolean" value="true"/>
                     <Property name="rows" type="int" value="5"/>
                     <Property name="text" type="java.lang.String" value="This list contains the &quot;trapName&quot; of the alarms you do not want to receive."/>

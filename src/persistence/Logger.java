@@ -36,7 +36,7 @@ public class Logger
 	createFile(findFileName(), path);
     }
 
-    public void write(String output)
+    public synchronized void write(String output)
     {
 	String[] lines = output.split("\\n");
 

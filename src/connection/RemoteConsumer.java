@@ -303,22 +303,26 @@ public class RemoteConsumer extends Thread
 
 			    do
 			    {
-				// Make sure we have data waiting (we don't
-				// want to block on the in.read)
-				while (!in.ready())
+				do
 				{
-				    // Wait another 10 ms
-				    sleep(10);
 
-				    // If a stop was called
-				    if (!canConsume)
+				    // Make sure we have data waiting (we don't
+				    // want to block on the in.read)
+				    while (!in.ready())
 				    {
-					return "";
-				    }
-				}
+					// Wait another 10 ms
+					sleep(10);
 
-				// Read the next character
-				receivedLinesAfter += in.readLine() + "\n";
+					// If a stop was called
+					if (!canConsume)
+					{
+					    return "";
+					}
+				    }
+
+				    // Read the next character
+				    receivedLinesAfter += (char) in.read();//Line() + "\n";
+				} while (!receivedLinesAfter.endsWith("\n"));
 
 				// Rerun all the filters for the lines after our found keyword
 				for (Filter filter : filterMap.values())
@@ -411,21 +415,28 @@ public class RemoteConsumer extends Thread
 		    System.gc();
 		}
 
-		// Make sure we have data waiting (we don't
-		// want to block on the in.read)
-		while (!in.ready())
+		line = "";
+
+		do
 		{
-		    // Wait another 10 ms
-		    sleep(10);
-
-		    // If a stop was called
-		    if (!canConsume)
+		    // Make sure we have data waiting (we don't
+		    // want to block on the in.read)
+		    while (!in.ready())
 		    {
-			return "";
-		    }
-		}
+			// Wait another 10 ms
+			sleep(10);
 
-		line = in.readLine() + "\n";
+			// If a stop was called
+			if (!canConsume)
+			{
+			    return "";
+			}
+		    }
+
+		    line += (char) in.read();
+
+		} while (!line.endsWith("\n"));
+
 		sb.append(line);
 	    }
 	}

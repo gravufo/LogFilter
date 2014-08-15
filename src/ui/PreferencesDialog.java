@@ -145,13 +145,13 @@ public class PreferencesDialog extends javax.swing.JDialog
 	    jButtonAddLogFile.setEnabled(false);
 	    jButtonEditServer.setEnabled(false);
 	    jButtonRemoveServer.setEnabled(false);
-	    jCheckBoxServerPropertiesEnabled.setEnabled(false);
+	    jCheckBoxLogMonitoringEnabled.setEnabled(false);
 	    jCheckBoxAlarmMonitoring.setEnabled(false);
 	    jRadioButtonServerConnectionSSH.setEnabled(false);
 	    jRadioButtonServerConnectionTelnet.setEnabled(false);
 	    jListLogFiles.setEnabled(false);
 
-	    jCheckBoxServerPropertiesEnabled.setSelected(false);
+	    jCheckBoxLogMonitoringEnabled.setSelected(false);
 	    jCheckBoxAlarmMonitoring.setSelected(false);
 	    jRadioButtonServerConnectionSSH.setSelected(false);
 	    jRadioButtonServerConnectionTelnet.setSelected(false);
@@ -162,10 +162,12 @@ public class PreferencesDialog extends javax.swing.JDialog
 	{
 	    Server server = Preferences.getInstance().getServer((String) jListServers.getSelectedValue());
 
-	    jCheckBoxServerPropertiesEnabled.setSelected(server.isEnabled());
+	    jCheckBoxLogMonitoringEnabled.setSelected(server.isMonitorLogs());
 	    jCheckBoxAlarmMonitoring.setSelected(server.isMonitorAlarms());
 	    jRadioButtonServerConnectionSSH.setSelected(server.isUseSSH());
 	    jRadioButtonServerConnectionTelnet.setSelected(!server.isUseSSH());
+
+	    jListLogFiles.setEnabled(false);
 
 	    serverLogFilesListModel.clear();
 
@@ -182,15 +184,14 @@ public class PreferencesDialog extends javax.swing.JDialog
 
 	    if (server.getLogList().isEmpty())
 	    {
-		jCheckBoxServerPropertiesEnabled.setEnabled(false);
-		jCheckBoxAlarmMonitoring.setEnabled(false);
+		jCheckBoxLogMonitoringEnabled.setEnabled(false);
 	    }
 	    else
 	    {
-		jCheckBoxServerPropertiesEnabled.setEnabled(true);
-		jCheckBoxAlarmMonitoring.setEnabled(true);
+		jCheckBoxLogMonitoringEnabled.setEnabled(true);
 	    }
 
+	    jCheckBoxAlarmMonitoring.setEnabled(true);
 	    jRadioButtonServerConnectionSSH.setEnabled(true);
 	    jRadioButtonServerConnectionTelnet.setEnabled(true);
 	    jListLogFiles.setEnabled(true);
@@ -291,7 +292,9 @@ public class PreferencesDialog extends javax.swing.JDialog
 	{
 	    if (jListServers.getSelectedIndex() != -1)
 	    {
-		jCheckBoxServerPropertiesEnabled.setEnabled(false);
+		jCheckBoxLogMonitoringEnabled.setEnabled(false);
+		Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setMonitorLogs(false);
+		jCheckBoxLogMonitoringEnabled.setSelected(false);
 	    }
 
 	    jButtonRemoveLogFile.setEnabled(false);
@@ -300,7 +303,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 	{
 	    if (jListServers.getSelectedIndex() != -1)
 	    {
-		jCheckBoxServerPropertiesEnabled.setEnabled(true);
+		jCheckBoxLogMonitoringEnabled.setEnabled(true);
 	    }
 
 	    jButtonRemoveLogFile.setEnabled(true);
@@ -352,6 +355,8 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void sortList(JList list, ListComparator.Type type)
     {
+	list.setEnabled(false);
+
 	DefaultListModel model = (DefaultListModel) list.getModel();
 	String name = (String) list.getSelectedValue();
 
@@ -367,6 +372,8 @@ public class PreferencesDialog extends javax.swing.JDialog
 	}
 
 	list.setSelectedValue(name, true);
+
+	list.setEnabled(true);
     }
 
     private static void setupTabTraversalKeys(JTabbedPane tabbedPane)
@@ -418,11 +425,11 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelServerProperties = new javax.swing.JLabel();
         jPanelServerProperties = new javax.swing.JPanel();
         jRadioButtonServerConnectionTelnet = new javax.swing.JRadioButton();
-        jCheckBoxServerPropertiesEnabled = new javax.swing.JCheckBox();
+        jCheckBoxLogMonitoringEnabled = new javax.swing.JCheckBox();
         jRadioButtonServerConnectionSSH = new javax.swing.JRadioButton();
         jLabelServerConnectionProtocol = new javax.swing.JLabel();
         jSeparatorServerConnectionProtocol = new javax.swing.JSeparator();
-        jLabelServerMonitoring = new javax.swing.JLabel();
+        jLabelLogMonitoring = new javax.swing.JLabel();
         jSeparatorServerMonitoring = new javax.swing.JSeparator();
         jLabelAlarmMonitoring = new javax.swing.JLabel();
         jSeparator2 = new javax.swing.JSeparator();
@@ -524,6 +531,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jListServers.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jListServers.setToolTipText("This list contains all the servers added to the monitoring list, but not necessarily activated.");
         jListServers.setNextFocusableComponent(jButtonAddServer);
+        jListServers.setRequestFocusEnabled(false);
         jListServers.addListSelectionListener(new javax.swing.event.ListSelectionListener()
         {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt)
@@ -546,6 +554,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jListLogFiles.setToolTipText("This list contains the log files to monitor on the selected server.");
         jListLogFiles.setEnabled(false);
         jListLogFiles.setNextFocusableComponent(jButtonAddLogFile);
+        jListLogFiles.setRequestFocusEnabled(false);
         jListLogFiles.addListSelectionListener(new javax.swing.event.ListSelectionListener()
         {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt)
@@ -578,7 +587,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
         jButtonRemoveServer.setText("Remove");
         jButtonRemoveServer.setEnabled(false);
-        jButtonRemoveServer.setNextFocusableComponent(jCheckBoxServerPropertiesEnabled);
+        jButtonRemoveServer.setNextFocusableComponent(jCheckBoxLogMonitoringEnabled);
         jButtonRemoveServer.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -631,16 +640,17 @@ public class PreferencesDialog extends javax.swing.JDialog
             }
         });
 
-        jCheckBoxServerPropertiesEnabled.setText("Enabled");
-        jCheckBoxServerPropertiesEnabled.setToolTipText("When checked, the selected server will be monitored using the log files shown on the right.");
-        jCheckBoxServerPropertiesEnabled.setEnabled(false);
-        jCheckBoxServerPropertiesEnabled.setNextFocusableComponent(jRadioButtonServerConnectionTelnet);
-        jCheckBoxServerPropertiesEnabled.setOpaque(false);
-        jCheckBoxServerPropertiesEnabled.addActionListener(new java.awt.event.ActionListener()
+        jCheckBoxLogMonitoringEnabled.setText("Enabled");
+        jCheckBoxLogMonitoringEnabled.setToolTipText("When checked, the selected server will be monitored using the log files shown on the right.");
+        jCheckBoxLogMonitoringEnabled.setContentAreaFilled(false);
+        jCheckBoxLogMonitoringEnabled.setEnabled(false);
+        jCheckBoxLogMonitoringEnabled.setNextFocusableComponent(jCheckBoxAlarmMonitoring);
+        jCheckBoxLogMonitoringEnabled.setOpaque(false);
+        jCheckBoxLogMonitoringEnabled.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
             {
-                jCheckBoxServerPropertiesEnabledActionPerformed(evt);
+                jCheckBoxLogMonitoringEnabledActionPerformed(evt);
             }
         });
 
@@ -660,8 +670,8 @@ public class PreferencesDialog extends javax.swing.JDialog
         jLabelServerConnectionProtocol.setText("Connection Protocol");
         jLabelServerConnectionProtocol.setFocusable(false);
 
-        jLabelServerMonitoring.setText("Server Monitoring");
-        jLabelServerMonitoring.setFocusable(false);
+        jLabelLogMonitoring.setText("Log Monitoring");
+        jLabelLogMonitoring.setFocusable(false);
 
         jLabelAlarmMonitoring.setText("Alarm Monitoring");
 
@@ -669,6 +679,8 @@ public class PreferencesDialog extends javax.swing.JDialog
         jCheckBoxAlarmMonitoring.setToolTipText("When checked, the currently selected server will be monitored for alarms.");
         jCheckBoxAlarmMonitoring.setContentAreaFilled(false);
         jCheckBoxAlarmMonitoring.setEnabled(false);
+        jCheckBoxAlarmMonitoring.setName(""); // NOI18N
+        jCheckBoxAlarmMonitoring.setNextFocusableComponent(jRadioButtonServerConnectionTelnet);
         jCheckBoxAlarmMonitoring.addActionListener(new java.awt.event.ActionListener()
         {
             public void actionPerformed(java.awt.event.ActionEvent evt)
@@ -688,8 +700,8 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addContainerGap()
                 .addGroup(jPanelServerPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabelServerConnectionProtocol)
-                    .addComponent(jCheckBoxServerPropertiesEnabled)
-                    .addComponent(jLabelServerMonitoring)
+                    .addComponent(jCheckBoxLogMonitoringEnabled)
+                    .addComponent(jLabelLogMonitoring)
                     .addComponent(jLabelAlarmMonitoring))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(jPanelServerPropertiesLayout.createSequentialGroup()
@@ -706,11 +718,11 @@ public class PreferencesDialog extends javax.swing.JDialog
             jPanelServerPropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelServerPropertiesLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabelServerMonitoring)
+                .addComponent(jLabelLogMonitoring)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparatorServerMonitoring, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jCheckBoxServerPropertiesEnabled)
+                .addComponent(jCheckBoxLogMonitoringEnabled)
                 .addGap(13, 13, 13)
                 .addComponent(jLabelAlarmMonitoring)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -782,7 +794,7 @@ public class PreferencesDialog extends javax.swing.JDialog
                     .addComponent(jButtonRemoveServer)
                     .addComponent(jButtonAddLogFile)
                     .addComponent(jButtonRemoveLogFile))
-                .addContainerGap(18, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jTabbedPaneRoot.addTab("Servers", jPanelServersAndLogs);
@@ -1105,7 +1117,7 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addComponent(jSeparatorLogFileFilters, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelTemplateLogFilePropertiesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPaneLogFileFilters, javax.swing.GroupLayout.DEFAULT_SIZE, 253, Short.MAX_VALUE)
+                    .addComponent(jScrollPaneLogFileFilters, javax.swing.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE)
                     .addGroup(jPanelTemplateLogFilePropertiesLayout.createSequentialGroup()
                         .addComponent(jPanelFilterProperties, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -1159,7 +1171,7 @@ public class PreferencesDialog extends javax.swing.JDialog
                 .addContainerGap()
                 .addComponent(jLabelTemplateLogFiles)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPaneTemplateLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, 345, Short.MAX_VALUE)
+                .addComponent(jScrollPaneTemplateLogFiles, javax.swing.GroupLayout.DEFAULT_SIZE, 342, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelTemplateLogFilesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButtonTemplateLogFileAdd)
@@ -1315,6 +1327,7 @@ public class PreferencesDialog extends javax.swing.JDialog
         jTextAreaAlarmFilters.setEditable(false);
         jTextAreaAlarmFilters.setBackground(new java.awt.Color(240, 240, 240));
         jTextAreaAlarmFilters.setColumns(20);
+        jTextAreaAlarmFilters.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
         jTextAreaAlarmFilters.setLineWrap(true);
         jTextAreaAlarmFilters.setRows(5);
         jTextAreaAlarmFilters.setText("This list contains the \"trapName\" of the alarms you do not want to receive.");
@@ -1482,16 +1495,16 @@ public class PreferencesDialog extends javax.swing.JDialog
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jSeparator4, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 68, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 250, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 278, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jTextFieldAlarmFilters, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanelMiscLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jButtonAlarmFilterRemove)
                         .addComponent(jButtonAlarmFilterAdd)))
-                .addContainerGap(14, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jTabbedPaneRoot.addTab("Miscellaneous", jPanelMisc);
@@ -1531,8 +1544,8 @@ public class PreferencesDialog extends javax.swing.JDialog
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jTabbedPaneRoot, javax.swing.GroupLayout.PREFERRED_SIZE, 450, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jTabbedPaneRoot, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButtonCancel)
                     .addComponent(jButtonOK))
@@ -1739,13 +1752,13 @@ public class PreferencesDialog extends javax.swing.JDialog
 	loadServerProperties();
     }//GEN-LAST:event_jButtonRemoveServerActionPerformed
 
-    private void jCheckBoxServerPropertiesEnabledActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jCheckBoxServerPropertiesEnabledActionPerformed
-    {//GEN-HEADEREND:event_jCheckBoxServerPropertiesEnabledActionPerformed
-	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setEnabled(jCheckBoxServerPropertiesEnabled.isSelected());
+    private void jCheckBoxLogMonitoringEnabledActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jCheckBoxLogMonitoringEnabledActionPerformed
+    {//GEN-HEADEREND:event_jCheckBoxLogMonitoringEnabledActionPerformed
+	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setMonitorLogs(jCheckBoxLogMonitoringEnabled.isSelected());
 
 	sortList(jListServers, ListComparator.Type.SERVER);
 	jListServers.repaint();
-    }//GEN-LAST:event_jCheckBoxServerPropertiesEnabledActionPerformed
+    }//GEN-LAST:event_jCheckBoxLogMonitoringEnabledActionPerformed
 
     private void jRadioButtonServerConnectionTelnetActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jRadioButtonServerConnectionTelnetActionPerformed
     {//GEN-HEADEREND:event_jRadioButtonServerConnectionTelnetActionPerformed
@@ -1773,7 +1786,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void jListServersValueChanged(javax.swing.event.ListSelectionEvent evt)//GEN-FIRST:event_jListServersValueChanged
     {//GEN-HEADEREND:event_jListServersValueChanged
-	if (jListServers.getSelectedValue() != null)
+	if (jListServers.isEnabled() && jListServers.getSelectedValue() != null)
 	{
 	    loadServerProperties();
 	}
@@ -2003,7 +2016,8 @@ public class PreferencesDialog extends javax.swing.JDialog
 
     private void jListLogFilesValueChanged(javax.swing.event.ListSelectionEvent evt)//GEN-FIRST:event_jListLogFilesValueChanged
     {//GEN-HEADEREND:event_jListLogFilesValueChanged
-	loadServerLogProperties();
+	if(jListLogFiles.isEnabled())
+	    loadServerLogProperties();
     }//GEN-LAST:event_jListLogFilesValueChanged
 
     private void jButtonRemoveLogFileActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonRemoveLogFileActionPerformed
@@ -2026,6 +2040,7 @@ public class PreferencesDialog extends javax.swing.JDialog
 
 	    jListLogFiles.setSelectedIndex(index);
 	}
+
 	// Reload properties in case there are no other objects
 	loadServerLogProperties();
     }//GEN-LAST:event_jButtonRemoveLogFileActionPerformed
@@ -2214,6 +2229,9 @@ public class PreferencesDialog extends javax.swing.JDialog
     private void jCheckBoxAlarmMonitoringActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jCheckBoxAlarmMonitoringActionPerformed
     {//GEN-HEADEREND:event_jCheckBoxAlarmMonitoringActionPerformed
 	Preferences.getInstance().getServer((String) jListServers.getSelectedValue()).setMonitorAlarms(jCheckBoxAlarmMonitoring.isSelected());
+	
+	sortList(jListServers, ListComparator.Type.SERVER);
+	jListServers.repaint();
     }//GEN-LAST:event_jCheckBoxAlarmMonitoringActionPerformed
 
     private void jTextFieldAlarmFiltersKeyTyped(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextFieldAlarmFiltersKeyTyped
@@ -2315,8 +2333,8 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JCheckBox jCheckBoxAlarmMonitoring;
     private javax.swing.JCheckBox jCheckBoxFlashTaskbar;
     private javax.swing.JCheckBox jCheckBoxLogFileFilterEnabled;
+    private javax.swing.JCheckBox jCheckBoxLogMonitoringEnabled;
     private javax.swing.JCheckBox jCheckBoxLogToDisk;
-    private javax.swing.JCheckBox jCheckBoxServerPropertiesEnabled;
     private javax.swing.JTextField jColorFieldBackground;
     private javax.swing.JTextField jColorFieldForeground;
     private javax.swing.JTextField jColorFieldHighlight;
@@ -2334,9 +2352,9 @@ public class PreferencesDialog extends javax.swing.JDialog
     private javax.swing.JLabel jLabelLogFileFilterPrePrint;
     private javax.swing.JLabel jLabelLogFileFilters;
     private javax.swing.JLabel jLabelLogFiles;
+    private javax.swing.JLabel jLabelLogMonitoring;
     private javax.swing.JLabel jLabelMaxNumLines;
     private javax.swing.JLabel jLabelServerConnectionProtocol;
-    private javax.swing.JLabel jLabelServerMonitoring;
     private javax.swing.JLabel jLabelServerPassword;
     private javax.swing.JLabel jLabelServerProperties;
     private javax.swing.JLabel jLabelServerUsername;

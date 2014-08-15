@@ -214,6 +214,7 @@
         </Component>
         <Container class="javax.swing.JScrollPane" name="jScrollPaneOutput">
           <AuxValues>
+            <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="10"/>
             <AuxValue name="autoScrollPane" type="java.lang.Boolean" value="true"/>
           </AuxValues>
 

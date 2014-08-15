@@ -23,6 +23,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
@@ -87,7 +88,7 @@ public class MainWindow extends JFrame
 			// Verify if the modification is a message from the server
 			String modification = de.getDocument().getText(de.getOffset(), de.getLength());
 
-			if (modification.contains("-------------------------------"))
+			if (modification.contains("-------------------------------") || modification.contains("ALARM"))
 			{
 			    // If it is, then it is relevant enough to flash taskbar
 			    toFront();
@@ -113,9 +114,7 @@ public class MainWindow extends JFrame
 
 	// Disable the auto scroll EDIT: Don't, we want to be able to write correctly.
 //	((DefaultCaret) jTextPaneOutput.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-
 //	jScrollPaneOutput.getVerticalScrollBar().getModel().setValue(jScrollPaneOutput.getVerticalScrollBar().getModel().getMaximum() - jScrollPaneOutput.getVerticalScrollBar().getModel().getExtent());
-
 	// Set the listener for the scrollpane to enhance auto-scroll functionality
 	jScrollPaneOutput.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener()
 	{
@@ -409,30 +408,15 @@ public class MainWindow extends JFrame
 	// Re-enable the connect button if it was disabled
 	if (jButtonDisconnect.isEnabled())
 	{
-	    try
-	    {
-		jButtonConnect.setEnabled(true);
-		jButtonRefresh.setEnabled(false);
-		jButtonDisconnect.setEnabled(false);
+	    jButtonConnect.setEnabled(true);
+	    jButtonRefresh.setEnabled(false);
+	    jButtonDisconnect.setEnabled(false);
 
-		Document doc = jTextPaneOutput.getDocument();
-		doc.insertString(doc.getLength(), "\nDisconnected.\n\n", null);
+	    writeToConsole("\nDisconnected.\n\n");
 
-//		new Thread(new Runnable()
-//		{
-//		    @Override
-//		    public void run()
-//		    {
-			// Verify if there is a connection alive - kill it if so
-			connectionManager.removeConnections();
-			connectionManager.addConnections(serverList, Preferences.getInstance().getServerAccount());
-//		    }
-//		}).start();
-	    }
-	    catch (BadLocationException ex)
-	    {
-		Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
-	    }
+	    // Verify if there is a connection alive - kill it if so
+	    connectionManager.removeConnections();
+	    connectionManager.addConnections(serverList, Preferences.getInstance().getServerAccount());
 	}
     }
 
@@ -442,15 +426,7 @@ public class MainWindow extends JFrame
 	jButtonRefresh.setEnabled(true);
 	jButtonDisconnect.setEnabled(true);
 
-	try
-	{
-	    Document doc = jTextPaneOutput.getDocument();
-	    doc.insertString(doc.getLength(), "\nInitiating connections...\n", null);
-	}
-	catch (BadLocationException ex)
-	{
-	    Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
-	}
+	writeToConsole("\nInitiating connections...\n");
 
 	new Thread()
 	{
@@ -464,17 +440,8 @@ public class MainWindow extends JFrame
 			@Override
 			public void run()
 			{
-			    try
-			    {
-				Document doc = jTextPaneOutput.getDocument();
-				doc.insertString(doc.getLength(), "Connections successful!\n", null);
-
-				doc.insertString(doc.getLength(), "Starting monitoring daemons...\n\n", null);
-			    }
-			    catch (BadLocationException ex)
-			    {
-				Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
-			    }
+			    writeToConsole("Connections successful!\n");
+			    writeToConsole("Starting monitoring daemons...\n\n");
 			}
 		    });
 
@@ -487,15 +454,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void run()
 			{
-			    try
-			    {
-				Document doc = jTextPaneOutput.getDocument();
-				doc.insertString(doc.getLength(), "Connections failed...aborting\n\n", null);
-			    }
-			    catch (BadLocationException ex)
-			    {
-				Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
-			    }
+			    writeToConsole("Connections failed...aborting\n\n");
 			}
 		    });
 
@@ -776,7 +735,7 @@ public class MainWindow extends JFrame
 
     private void jTextPaneOutputKeyTyped(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextPaneOutputKeyTyped
     {//GEN-HEADEREND:event_jTextPaneOutputKeyTyped
-	
+
     }//GEN-LAST:event_jTextPaneOutputKeyTyped
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItem1ActionPerformed
@@ -786,7 +745,7 @@ public class MainWindow extends JFrame
 
     private void jTextPaneOutputKeyPressed(java.awt.event.KeyEvent evt)//GEN-FIRST:event_jTextPaneOutputKeyPressed
     {//GEN-HEADEREND:event_jTextPaneOutputKeyPressed
-        // Small hack to make the writing work WITH the custom auto scrolling
+	// Small hack to make the writing work WITH the custom auto scrolling
 //	DefaultCaret caret = (DefaultCaret) jTextPaneOutput.getCaret();
 //	caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
     }//GEN-LAST:event_jTextPaneOutputKeyPressed
@@ -794,6 +753,17 @@ public class MainWindow extends JFrame
     private void jMenuItemFindActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemFindActionPerformed
     {//GEN-HEADEREND:event_jMenuItemFindActionPerformed
 	Find.getInstance().display();
+
+	int value = jScrollPaneOutput.getVerticalScrollBar().getValue(),
+		minimum = jScrollPaneOutput.getVerticalScrollBar().getMinimum(),
+		maximum = jScrollPaneOutput.getVerticalScrollBar().getMaximum();
+
+	if (value > ((maximum - minimum) / 2))
+	{
+	    jScrollPaneOutput.getVerticalScrollBar().setValue(value + 5);
+	}
+	else
+	    jScrollPaneOutput.getVerticalScrollBar().setValue(value - 5);
     }//GEN-LAST:event_jMenuItemFindActionPerformed
 
     /**
@@ -901,6 +871,11 @@ public class MainWindow extends JFrame
 	return jTextPaneOutput;
     }
 
+    public static JScrollPane getScrollBar()
+    {
+	return jScrollPaneOutput;
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonConnect;
     private javax.swing.JButton jButtonDisconnect;
@@ -915,7 +890,7 @@ public class MainWindow extends JFrame
     private javax.swing.JMenuItem jMenuItemFind;
     private javax.swing.JMenuItem jMenuItemPreferences;
     private javax.swing.JPanel jPanelRoot;
-    private javax.swing.JScrollPane jScrollPaneOutput;
+    private static javax.swing.JScrollPane jScrollPaneOutput;
     private javax.swing.JTextField jTextFieldServersToMonitor;
     private static javax.swing.JTextPane jTextPaneOutput;
     // End of variables declaration//GEN-END:variables

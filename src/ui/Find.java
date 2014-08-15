@@ -62,6 +62,9 @@ public class Find extends JDialog
 	findButton = new JButton("Find");
 	cancelButton = new JButton("Cancel");
 
+	// Set default settings
+	backCheckBox.setSelected(true);
+
 	// Set the escape character to close the dialog
 	ActionListener escListener = new ActionListener()
 	{
@@ -256,6 +259,27 @@ public class Find extends JDialog
 		console.setSelectionStart(i);
 		console.setSelectionEnd(i + keyword.length());
 		lastI = i;
+//
+//		JScrollBar scroll = MainWindow.getScrollBar().getVerticalScrollBar();
+//		if (backCheckBox.isSelected())
+//		{
+//		    scroll.setValue(scroll.getValue() + (int) (scroll.getVisibleAmount() / 2));
+//		}
+//		else
+//		{
+//		    scroll.setValue(scroll.getValue() - (int) (scroll.getVisibleAmount() / 2));
+//		}
+//
+//		// Go 10 \n after in order to see more of the context
+//		int newPos = i;
+//		for (int newLine = 0; newLine < 10; ++newLine)
+//		{
+//		    newPos = text.indexOf("\n", newPos);
+//		}
+//
+//		console.setCaretPosition(newPos);
+
+
 		return;
 	    }
 

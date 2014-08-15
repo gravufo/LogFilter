@@ -41,7 +41,7 @@
               <EmptySpace max="-2" attributes="0"/>
               <Component id="jLabelTitle" min="-2" max="-2" attributes="0"/>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Component id="jScrollPane1" pref="268" max="32767" attributes="0"/>
+              <Component id="jScrollPane1" pref="287" max="32767" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -76,7 +76,7 @@
             </Property>
             <Property name="lineWrap" type="boolean" value="true"/>
             <Property name="rows" type="int" value="5"/>
-            <Property name="text" type="java.lang.String" value="Version 1.0&#xa;&#xa;This tool serves the purpose of monitoring and filtering log files on remote servers.&#xa;&#xa;Created in 2014 by Christian Artin and supervised by Khang Dang.&#xa;&#xa;Special thanks to the System Test and Automation team in Saint-Laurent, QC for alpha and beta testing!&#xa;&#xa;Open-source usage:&#xa;&#x9;- JSch : http://www.jcraft.com/jsch/&#xa;&#x9;- Apache Commons Net: http://commons.apache.org/proper/commons-net/&#xa;&#x9;- JFontChooser by Masahiko SAWAI"/>
+            <Property name="text" type="java.lang.String" value="Version 1.5&#xa;&#xa;This tool serves the purpose of monitoring and filtering log files on remote servers.&#xa;&#xa;Created in 2014 by Christian Artin and supervised by Khang Dang.&#xa;&#xa;Special thanks to the System Test and Automation team in Saint-Laurent, QC for alpha and beta testing!&#xa;&#xa;Open-source usage:&#xa;&#x9;- JSch : http://www.jcraft.com/jsch/&#xa;&#x9;- Apache Commons Net: http://commons.apache.org/proper/commons-net/&#xa;&#x9;- JFontChooser by Masahiko SAWAI&#xa;        - Find interface by Oracle Corporation"/>
             <Property name="wrapStyleWord" type="boolean" value="true"/>
             <Property name="focusable" type="boolean" value="false"/>
           </Properties>

@@ -220,6 +220,16 @@ public class Preferences implements Serializable
 	defaultLog.setFilePath("/var/broadworks/logs/xsp/");
 	defaultLog.setNamePrefix("XsiEventsLog");
 	logMap.put("XSP-XsiEventsLog", defaultLog);
+
+	/**
+	 * Create the default Alarm filters
+	 */
+	alarmFiltersList.add("bwsystemhealthreport");
+	alarmFiltersList.add("bwadduserevent");
+	alarmFiltersList.add("bwdeleteuserevent");
+	alarmFiltersList.add("bwaddgroupevent");
+	alarmFiltersList.add("bwdeletegroupevent");
+	alarmFiltersList.add("bwconfigurationchanged");
     }
 
     /**
@@ -387,7 +397,7 @@ public class Preferences implements Serializable
 	
 	for (Server s : instance.serverMap.values())
 	{
-	    if (s.isEnabled() && !s.getLogList().isEmpty())
+	    if (s.isEnabled())
 		enabledServers.add(s);
 	}
 	

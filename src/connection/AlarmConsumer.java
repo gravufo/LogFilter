@@ -154,6 +154,12 @@ public class AlarmConsumer extends Thread
 		}
 	    }
 	});
+
+	// Write to log file if enabled
+	if (!text.trim().isEmpty() && Preferences.getInstance().isOutputToDisk() && persistence.Logger.getInstance().isOpen())
+	{
+	    persistence.Logger.getInstance().write(text);
+	}
     }
 
     private String readUntilPattern()
